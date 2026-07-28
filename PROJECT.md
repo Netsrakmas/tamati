@@ -27,6 +27,17 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 
 ## Open questions
 
+- **DECISION NEEDED — the bedtime notification needs a server, or a native app.** Safari on
+  iOS supports Web Push but *not* local scheduled notifications (`TimestampTrigger` is
+  unsupported; scheduled notifications aren't in the standard). A purely local PWA cannot
+  wake itself at 22:00. Three options, none free:
+  (a) **native app** — local notifications work with no server, and it also unlocks the
+  parked widget, but it's a much bigger build;
+  (b) **PWA + a tiny push server** — breaks the locked no-backend decision and becomes a
+  forever-obligation;
+  (c) **drop the bedtime push from web v1** — keeps every lock intact, loses a signature
+  mechanic.
+  This blocks M6 only; M1–M5 are unaffected.
 - Manual PWA install on iOS is a real funnel cost (no install prompt exists). Accepted for
   v1 since v1 isn't chasing installs; revisit if this ever ships properly.
 - A1 (60fps) needs one run on real hardware. Cannot be judged in a GPU-less container, and
@@ -96,8 +107,9 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   cannot be keyframed; authoring tools are keyframe tools. Also keeps the project free of
   Rive's $9/mo export dependency, which would contradict no-ongoing-obligation. Rain
   World's point-mass paper-doll model is the reference.
-- **Web-first PWA, not native.** Push works on iOS 16.4+ for home-screen-installed PWAs, so
-  the bedtime notification — a signature mechanic — does not need a native build. Only the
-  widget does, and it stays parked.
+- ~~**Web-first PWA, not native.**~~ **PARTLY RETRACTED 2026-07-28.** Push does *arrive* on
+  iOS PWAs, but that finding never asked who *sends* it — iOS has no local scheduled
+  notifications, so the bedtime push needs a server. Web-first still stands for M1–M5; the
+  notification is an open decision above.
 - **Palette and shape language are locked in PROMPT.md §3.** Style is decided in plan, not
   in art. Do not relitigate during asset production.

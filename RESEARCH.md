@@ -4,6 +4,138 @@ Evidence trail for the spec. Append dated addenda; never overwrite.
 
 ---
 
+## Addendum 2026-07-28 (b) — prompt/spec craft, done properly
+
+The first pass at angle 3 was thin: one search, all enterprise "spec for AI agents"
+material. This is the practitioner pass, and it turned up two things that change the spec
+and one that invalidates a conclusion from addendum (a).
+
+### The workflow practitioners actually converged on
+
+**Harper Reed's LLM codegen workflow** is the most-cited version, and it is nearly the same
+shape as `flow` → `idee` → `plan`:
+
+1. **Brainstorm to a spec**, with a specific and widely-copied prompt:
+   > *"Ask me one question at a time so we can develop a thorough, step-by-step spec for
+   > this idea. Each question should build on my previous answers, and our end goal is to
+   > have a detailed specification I can hand off to a developer. Let's do this iteratively
+   > and dig into every relevant detail. Remember, only one question at a time."*
+
+   Then: *"…compile our findings into a comprehensive, developer-ready specification.
+   Include all relevant requirements, architecture choices, data handling details, error
+   handling strategies, and a testing plan…"* → saved as `spec.md`.
+2. **Plan** with a reasoning model into `prompt_plan.md` — *the actual prompts for each
+   step*, plus `todo.md` for lower-level items.
+3. **Execute** in discrete loops, ticking `prompt_plan.md` as it goes.
+
+**What we're missing:** step 2. Our `PROMPT.md` describes milestones but does not contain
+a ready-to-run prompt per milestone. That is the artifact that makes the next session cheap.
+
+**Geoffrey Huntley's "Ralph Wiggum" loop** — feed the *same* prompt to an agent repeatedly
+until the task completes; progress accumulates in **files and git history, not in the
+context window**. Anthropic shipped it as an official plugin in Dec 2025. The principle
+matters even if the loop doesn't: durable state belongs on disk.
+
+### The obra/superpowers brainstorming skill (primary source, fetched)
+
+Jesse Vincent's skill encodes rules worth stealing:
+
+- **One question per message.** "If a topic needs more exploration, break it into multiple
+  questions." (We bounced 2–3 at a time — faster, and defensible, but noted.)
+- **Propose 2–3 approaches with trade-offs**, don't just answer.
+- **Present the design in sections, get approval after each**, rather than dumping a spec.
+- **No "too simple" exemption:** *"Every project goes through this process. A todo list, a
+  single-function utility, a config change — all of them."*
+- Hard prohibition on implementing before the design is approved.
+- **A spec self-review pass** — inline fixes for **TBDs, contradictions, and ambiguity** —
+  before the user reviews it.
+- Commit the spec.
+
+**We skipped the self-review.** Running it found two real defects, below.
+
+### Evidence against one giant master prompt
+
+This is the strongest empirical finding, and it validates milestone-gating:
+
+- **Context rot:** Chroma tested **18 frontier models**; *every one* degrades as input
+  length grows, well before the window is full.
+- **LongMemEval: 30–60% performance gaps** between ~300-token and ~113k-token prompts.
+  NIAH-style tasks drop **20–50% from 10k to 100k+ tokens**.
+- Coding agents are worst-affected: accumulative context (every file read and tool output
+  stays), high distractor density, and long horizons.
+- "Agents that found the right code quickly used fewer tokens, accumulated less noise, and
+  produced better results."
+
+**Implication:** a single "ultimate prompt" that one-shots a finished product is the wrong
+target. The winning shape is a *small, dense spec plus a per-milestone prompt slice*, with
+durable state on disk. Our milestone structure is right; our monolithic `PROMPT.md` is not
+ideal to load wholesale.
+
+### On examples — our biggest gap
+
+Anthropic's own prompting guidance: **examples are the most reliable way to steer output**;
+few-shot/multishot meaningfully improves accuracy and consistency. Practitioner guides
+agree that "specific, constrained, example-driven, role-based prompts consistently beat
+vague one-liners."
+
+`PROMPT.md` had **zero examples** — only rules and numbers. Fixed in §3.9.
+
+### Why AI-built things come out generic
+
+- Generic output comes from **default prompts and not iterating past the first generation**.
+- "AI generates what looks *cool* but doesn't know **why something matters emotionally**";
+  art direction is deeply contextual.
+- A game's identity comes from **design, mechanics and art direction** — not from whether
+  assets were handmade.
+
+This validates the named-anchor style bible and the forbidden list. It also argues the
+*emotional* rationale must sit next to each rule, not in a separate document — which is why
+§3.5 now carries the "why" inline.
+
+### Meta-prompting
+
+Using the model to write and refine its own prompt is the mainstream 2026 technique;
+"example-first" meta-prompting (give input/output pairs, have it reverse-engineer the
+instruction set) is the useful variant here. Practically: the spec self-review *is* a
+meta-prompting pass, and it should be run every time the spec changes.
+
+### ⚠️ Correction to addendum (a), angle 4
+
+Addendum (a) concluded: *"web-first PWA — the bedtime notification is achievable without a
+native build."* **That conclusion was incomplete and is wrong as stated.**
+
+Verified: **Safari on iOS supports Web Push but NOT local scheduled notifications.** The
+Notification Triggers API / `TimestampTrigger` is not supported in Safari. "As a web
+standards matter, scheduled notifications don't exist in the Notifications API standard."
+The recommended approach for iOS PWAs is explicitly **server-based web push**.
+
+So the earlier finding established that push *arrives*; it never asked **who sends it**. A
+purely local PWA cannot wake itself at 22:00. The bedtime notification therefore needs
+either a push server — which breaks the locked no-backend decision — or a native app.
+
+See PROJECT.md open questions; this is a decision, not something to resolve silently.
+
+### Sources
+
+- [My LLM codegen workflow atm — Harper Reed](https://harper.blog/2025/02/16/my-llm-codegen-workflow-atm/) · [Simon Willison's notes on it](https://simonwillison.net/2025/Feb/21/my-llm-codegen-workflow-atm/)
+- [An LLM Codegen Hero's Journey — Harper Reed](https://harper.blog/2025/04/17/an-llm-codegen-heros-journey/)
+- [obra/superpowers — brainstorming SKILL.md](https://github.com/obra/superpowers/blob/main/skills/brainstorming/SKILL.md)
+- [Ralph Wiggum Loop — prg.sh](https://prg.sh/notes/Ralph-Wiggum-Loop)
+- [A Survey of Development Workflows in the Coding Agent Era](https://nyosegawa.com/en/posts/coding-agent-workflow-2026/)
+- [Context Rot: Why LLMs Degrade as Context Grows — Morph](https://www.morphllm.com/context-rot)
+- [Context Rot in AI Coding Agents — MindStudio](https://www.mindstudio.ai/blog/context-rot-ai-coding-agents-how-to-prevent)
+- [Context rot explained — Redis](https://redis.io/blog/context-rot/)
+- [Prompting best practices — Claude Platform Docs](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)
+- [A Complete Guide to Meta Prompting — PromptHub](https://www.prompthub.us/blog/a-complete-guide-to-meta-prompting)
+- [Claude Code In One Shot | Build Production Ready Apps (YouTube)](https://www.youtube.com/watch?v=14K2noGTJ1M) · [Vibe Coding Masterclass (YouTube)](https://www.youtube.com/watch?v=VxD7_MRPebY)
+- [Vibe Code an App From Idea to Production in 2026](https://excellentprompts.substack.com/p/vibe-code-app-claude-code-safely)
+- [Why AI Content Feels Different in Games Than in Software Development](https://medium.com/@kwonformalverify/why-ai-content-feels-different-in-games-than-in-software-development-63ad7d73712e)
+- [Creating Scheduled Push Notifications — CSS-Tricks](https://css-tricks.com/creating-scheduled-push-notifications/)
+- [iOS & iPadOS PWA Notifications — Monogram](https://monogram.io/blog/notifications-from-ios-and-ipados-pwas)
+- [Upcoming Support for Background Notifications in PWAs on Safari? — Apple Developer Forums](https://developer.apple.com/forums/thread/735402)
+
+---
+
 ## Addendum 2026-07-28 — kickoff research (mode A)
 
 Three angles: animation/physics craft, implementation stack, spec craft. Plus a platform

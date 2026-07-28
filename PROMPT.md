@@ -5,6 +5,19 @@ box when its gate passes.
 
 ---
 
+## 0. How to use this document
+
+**Do not load this whole file to build one milestone.** Chroma tested 18 frontier models
+and every one degrades as input grows, well before the window is full; LongMemEval shows
+**30–60% gaps** between short and long prompts, and coding agents are the worst-affected
+case. A single "ultimate prompt" that one-shots a finished product is the wrong target.
+
+Load: **§1 mission + §2 constraints + §3 style bible + §5 forbidden + the one milestone
+you're building.** Skip the rest. Durable state lives on disk (this file, `PROJECT.md`,
+git history), not in a context window.
+
+**Tick the milestone box when its gate passes.** That is the hand-off between sessions.
+
 ## 1. Mission
 
 > Build **Tamati**: a virtual pet that is genuinely happy to see you, sleeps when you
@@ -185,6 +198,76 @@ tuned so a single daily visit fully resolves all three.
 The promise is *"nothing here will ever ask you for another minute"* — **not** *"you must
 leave."*
 
+### 3.9 Worked examples
+
+Anthropic's own guidance is that **examples are the most reliable way to steer output** —
+more reliable than rules. This section had nothing in it for the first two sessions, which
+was the single biggest weakness in the spec. Judgement calls should be resolved by
+matching these, not by re-reading the rules.
+
+**The test to apply to any new idea: does it produce a score, or a reaction?**
+
+| ✅ Do this | ❌ Not this |
+|---|---|
+| Tap it five times fast → it giggles, then gets annoyed, then walks off | Tap it five times fast → "+5 happiness!" floats up |
+| It's grubby, so it noses the sponge toward you | A cleanliness bar sits at 40% |
+| You've been gone 8 hours → it runs at the camera and the screen shakes | You've been gone 8 hours → "Welcome back! You've earned 3 coins" |
+| Post-care, it settles down and nothing happens | Post-care, "Play a minigame to earn treats?" |
+| It found a bottle cap and left it by the door for you | Daily login reward: 1× bottle cap |
+| One notification, 22:00: *"Tamati went to sleep."* | "Tamati misses you! Come back 😢" |
+| Adult greeting: glances up, pause, small nod | Adult greeting: same joyful run as the baby, but slower |
+
+**Tone by stage — the same event, four readings.** Getting picked up:
+
+> **Baby:** shrieks, flails, wants more the instant you stop.
+> **Kid:** giggles, gets dizzy, staggers off into a wall.
+> **Teen:** goes rigid. *"...put me down."*
+> **Adult:** goes completely limp. Stares at you. Waits. Does not dignify it.
+
+**Code style — tunables are named and centralised, never inline:**
+
+```ts
+// ✅
+if (this.rig.landImpact > SQUASH.triggerImpact) this.squashT = 0
+
+// ❌ — a magic number nobody can find or tune later
+if (this.rig.landImpact > 6) this.squashT = 0
+```
+
+**Comment the *why*, especially the emotional why.** Generic output comes from rules
+without rationale; art direction is contextual, and the reason is what carries it:
+
+```ts
+// ✅
+// Compulsive checking must receive LESS reward, never more. That is the ethical
+// stance encoded as an animation, and it's why this is pure and property-tested.
+
+// ❌
+// Returns the greeting tier.
+```
+
+## 3.10 Spec self-review
+
+The `superpowers` brainstorming skill ends with a self-review for **TBDs, contradictions
+and ambiguity** before the human ever reads the spec. We skipped it originally. Run it
+after every substantive change. The first run found two real defects:
+
+**① The bedtime notification contradicts the no-backend decision.** §2 and §5 both forbid a
+backend and runtime network. M6 promises one push at 22:00. **Safari on iOS supports Web
+Push but not local scheduled notifications** — `TimestampTrigger` is unsupported, and
+scheduled notifications don't exist in the Notifications API standard at all. A purely
+local PWA cannot wake itself at 22:00. This needs a decision, not a workaround; see
+`PROJECT.md`. **M6 is blocked until it's made.**
+
+**② Visits were countable by refreshing.** "Lifespan is counted in visits, un-gameable by
+neglect" was true, but the reverse was wide open: `visits += 1` on every launch meant 300
+reloads aged the pet to adulthood in an afternoon. Fixed — a visit now counts only at
+greeting tier `trot` (1h+) or better, so reopening twice in a minute is one visit.
+
+**Known-and-accepted overlap:** M1's gate lists A6 (offline), which needs a service
+worker, while M6 owns "installable PWA". A minimal service worker ships in M1; M6 adds
+install polish, schema migration and push. Deliberate, not an oversight.
+
 ## 4. Architecture
 
 ```
@@ -303,7 +386,7 @@ session** — this is the hand-off mechanism between chats.
       *Gate:* Ten consecutive adult-stage opens produce no repeated behaviour; the room is
       never empty of activity.
 
-- [ ] **M6 — PWA, persistence, and the one notification.**
+- [ ] **M6 — PWA, persistence, and the one notification.** ⚠️ *BLOCKED — see §3.10 ①*
       Installable PWA, offline-capable. Versioned save schema with migration. The single
       bedtime push (home-screen install only on iOS 16.4+).
       *Gate:* Airplane-mode cold start works; a v1 save file loads under a v2 schema; the

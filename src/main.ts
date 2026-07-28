@@ -82,7 +82,12 @@ async function boot(): Promise<void> {
   const effectiveLastSeen = override !== null ? now - override : state.lastSeen
   const spec = greetingFor(effectiveLastSeen, now)
   behaviour.playGreeting(spec)
-  state.visits += 1
+
+  // A visit counts only if it was a real return — tier 'trot' (1h+) or better. Counting
+  // every launch meant a compulsive checker could refresh 300 times and age the pet to
+  // adulthood in an afternoon, which contradicts both the anti-compulsion thesis and the
+  // "lifespan can't be gamed" decision. Reopening the app twice in a minute is one visit.
+  if (spec.rank >= 2) state.visits += 1
 
   // --- input: grab, drag, shake, drop -------------------------------------
   app.stage.eventMode = 'static'
