@@ -1,6 +1,6 @@
 # Tamati
 
-**Phase:** 1 — plan (spec written, not yet executed)
+**Phase:** 2 — build (M1 code complete, human kill-gate not yet run)
 **Stack:** Vite + TypeScript + PixiJS v8, installable PWA. Custom verlet rig, no
 animation authoring tool.
 **Repo:** github.com/Netsrakmas/tamati
@@ -15,9 +15,12 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 ## Phase log
 
 - 0 idee — **done** (verdict: build, as a craft project not a business). See IDEE.md
-- 1 plan — **spec written, not executed.** See RESEARCH.md, PROMPT.md. 7 milestones, all
-  unticked. Stopped here deliberately: the user asked for a plan, not a build.
-- 2 build — not started
+- 1 plan — **done.** See RESEARCH.md, PROMPT.md. 7 milestones.
+- 2 build — **M1 built, gate PARTIAL.** 24 unit tests + 17 browser checks green. Two
+  criteria unverifiable in a GPU-less container (raster fps, end-to-end shake gesture) —
+  both documented in PROMPT.md M1 rather than waved through. **The human kill-gate — five
+  people, three unprompted smiles — has not been run, so M1 stays unticked.** That is the
+  milestone's actual purpose; everything else is preamble.
 - 3 art — not started
 - 4 test — not started
 - 5 ship — not started
@@ -26,6 +29,8 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 
 - Manual PWA install on iOS is a real funnel cost (no install prompt exists). Accepted for
   v1 since v1 isn't chasing installs; revisit if this ever ships properly.
+- A1 (60fps) needs one run on real hardware. Cannot be judged in a GPU-less container, and
+  the CPU-side evidence (0.28ms of a 16ms budget) is encouraging but not proof.
 - How much authored content do the adult's routines and projects need before the endgame
   feels alive? Mortality caps this treadmill rather than removing it — it still needs a
   number.

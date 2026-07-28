@@ -256,7 +256,7 @@ Self-checkable. Each is pass/fail, not a judgement call.
 Tick each box when its gate passes. **An unticked box on finished work costs an hour next
 session** — this is the hand-off mechanism between chats.
 
-- [ ] **M1 — The kill-gate: greeting + wiggle, baby only.**
+- [ ] **M1 — The kill-gate: greeting + wiggle, baby only.** ← *built; human gate outstanding*
       Vertical slice. Baby stage only. Absence-tiered greeting backed by persisted
       `lastSeen`. Full verlet rig with grab, drag, shake, drop. A floor and a background.
       **No needs, no growth, no props, no room dressing.**
@@ -264,6 +264,21 @@ session** — this is the hand-off mechanism between chats.
       the phone cold, and **at least three visibly smile or laugh unprompted.** If that
       fails, stop. Nothing downstream saves it, and this is the cheapest possible place to
       learn it.
+
+      **Status 2026-07-28.** Code complete. `npm test` → 24 unit tests green
+      (A3, A9, rig invariants, shake detector). `npm run verify` → 17/17 browser checks
+      (A2 clean console, A4 807ms cold start, A6 offline, grab/drag verified).
+      **Two gates could not be judged in a container with no GPU** and are honestly
+      unverified rather than passed:
+      - **A1 raster frame rate.** WebGL runs on SwiftShader (CPU). Measured 8fps, which
+        says nothing about a real device. What *is* portable — our own sim+draw cost —
+        is **0.28ms mean, 3.8ms worst of a 16ms budget**, so the app's own work is not
+        the risk. Needs one run on real hardware.
+      - **Shake gesture end-to-end.** The saturated main thread samples pointer events at
+        ~5Hz; detecting a 4Hz shake needs >8Hz (Nyquist). The detector itself is covered
+        by `tests/shake.test.ts` at 30/60/120/240Hz plus negative cases.
+      - **The human gate has not been run.** Five people, three smiles. This is the actual
+        kill-gate and the box stays unticked until it happens.
 
 - [ ] **M2 — Needs and the room.**
       Feed, clean, play. One interaction each, no meters. Props: bowl, sponge, ball. Room

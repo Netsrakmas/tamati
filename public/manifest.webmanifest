@@ -1,0 +1,11 @@
+{
+  "name": "Tamati",
+  "short_name": "Tamati",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5ebda",
+  "theme_color": "#f5ebda",
+  "icons": []
+}
