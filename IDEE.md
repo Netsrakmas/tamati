@@ -24,7 +24,7 @@ compulsively. Every mechanic here inverts that into **joy**:
 
 | Tamagotchi | Tamati |
 |---|---|
-| Dies if neglected | Drifts if neglected — gets shy, less expressive. Winnable back. |
+| Dies if neglected | Drifts if neglected — gets shy, less expressive. Winnable back. Dies only of old age, on a schedule neglect cannot touch. |
 | Wants your attention always | Sleeps at night. Actively doesn't want your 2am attention. |
 | Nags you | One notification, at bedtime, telling you to put the phone down. |
 | Never finishes | Ends after ~30 seconds. On purpose. |
@@ -86,8 +86,8 @@ to.** That's a stronger reason, not a weaker one.
 *Cost to flag:* authored routines and projects are a mild content treadmill. Bounded — a
 finite set of behaviours, not an endless one — but real.
 
-Adult is the **terminal life stage**. The relationship keeps developing through the second
-pet (below), not through further growth.
+Adult is **not** terminal — see mechanic 2c. It ends in an elder stage and a death from
+old age, and a successor carries the line on.
 
 ### 2b. A deadpan character needs a foil — the second pet
 
@@ -106,6 +106,77 @@ comedy.
   animations.
 - **Still v2.** The kill-gate does not move. v1's endgame is carried by independence
   alone.
+
+### 2c. Mortality and generations
+
+The pet ages past adult into an **elder** stage and eventually **dies of old age**. A
+successor — the baby it raised — carries the line on and eventually raises its own.
+
+**This does not contradict the no-death lock.** That lock was against
+*death-as-punishment*: neglect it and you killed it. That is guilt machinery and it stays
+banned. Death from old age is a different mechanism — a penalty versus mortality. The
+lock's reason survives intact, provided the two never blur.
+
+**Why it earns its cost:**
+
+1. **It caps the content treadmill.** Adult-forever flatlines however many routines you
+   author. Mortality means the loop restarts instead of needing infinite behaviours.
+2. **It gives the thing meaning.** A pet that cannot die is a toy; a pet that will die is
+   a relationship. The nod payoff lands harder when the number of them left is finite.
+3. **It turns the second pet into a successor** rather than a bolt-on. The baby you raised
+   becomes the adult who raises the next.
+
+And the symmetry is the identity of the app: **the session ends, and the life ends.**
+Everything here is finite on purpose, on a phone where nothing is allowed to finish.
+
+#### Three non-negotiable conditions
+
+1. **Death is by age alone, never accelerated by neglect.** Care shapes *who they were*,
+   never *how long they lived*. The moment neglect shortens a life, this is Tamagotchi
+   again and the project is pointless.
+2. **Generations overlap — never an empty room.** The successor is already present before
+   the death; the old one dies having already taught the young one. This is what makes it
+   grief rather than punishment: you don't lose everything, you lose *someone*, and
+   someone remains.
+3. **No notification, no fanfare, no re-engagement.** No push, ever. No "R.I.P." screen,
+   no music swell. It goes to sleep in its usual spot and doesn't get up; the baby doesn't
+   understand at first and waits nearby. You find out by showing up.
+
+#### Lifespan is measured in visits, not calendar days
+
+Target roughly **300 mornings**, not "10 months". Calendar time fails both ways — three
+weeks is a treadmill, two years means nobody sees it — and a year-long arc can't be
+playtested.
+
+- Can't be gamed by neglect: skipping days doesn't kill it faster, it just doesn't
+  progress.
+- Every player gets the whole arc eventually, at their own pace.
+- **Time only passes when you're there** — the purest statement of the anti-guilt thesis.
+  Going away for three months costs you nothing.
+
+#### Inheritance
+
+Traits pass down, shaped by how the parent was raised, so generation 3 visibly carries
+something of generation 1. The line accumulates a history — a collection hook with no shop
+attached.
+
+This justifies **one** extra screen: a family album. Technically a second tab, permitted
+because a memorial asks nothing of you, which is the real test. An exception, not a
+precedent.
+
+#### Cost
+
+- A fifth tonal stage (elder) — the cheapest one: slow, few frames, deadpan is timing not
+  motion.
+- A trait/inheritance model and real persistence.
+- **v3.** It needs the two-character scene v2 builds.
+- Many players will stop after generation one. Genuine outcome, and acceptable here: a
+  complete experience with an ending beats an endless one. That is the thesis.
+
+*Named plainly:* this makes it a bigger product than "something that makes you smile."
+Mortality doesn't make people smile, it makes them feel something, which is more. Probably
+an upgrade — but a different promise than the original, to be chosen deliberately rather
+than drifted into.
 
 **The greeting is the instrument that tells this story.** Same beat every time, so change
 is legible:

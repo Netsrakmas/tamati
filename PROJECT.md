@@ -29,10 +29,15 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   a hybrid (rigged body for manipulation, hand-drawn frames for set-piece reactions) is
   the likely answer.
 - How much authored content do the adult's routines and projects need before the endgame
-  feels alive? This is the one genuine content treadmill in the design — bounded, but it
-  needs a number.
+  feels alive? Mortality caps this treadmill rather than removing it — it still needs a
+  number.
+- ~300 visits is a guess, not a finding. The real lifespan number can't be playtested
+  honestly at full length; needs a way to validate it (compressed test build?).
+- Does mortality change what this project *is*? It promises more than "makes you smile" —
+  it promises to make you feel something. Probably an upgrade, but it should be a
+  deliberate choice, not a drift.
 
-*(Resolved: the pet reaches adult and stays. Terminal stage — see decisions.)*
+*(Resolved: adult is not terminal. Elder stage, then death of old age — see decisions.)*
 
 ## Decisions locked
 
@@ -50,17 +55,28 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   and wiggling it is a first-class interaction, and it ages tonally just like the greeting
   does — a second instrument playing the same melody.
 - **Needs are not chores.** The moment "play" is a meter you top up, it stops being play.
-- **No guilt mechanics.** No death, no streaks held hostage, no "your pet misses you!"
-  push. Neglect causes drift, not punishment. This is the whole thesis — relitigating it
-  makes the project pointless.
+- **No guilt mechanics.** No death-as-punishment, no streaks held hostage, no "your pet
+  misses you!" push. Neglect causes drift, not punishment. This is the whole thesis —
+  relitigating it makes the project pointless.
+- **Mortality is allowed; punishment is not.** The pet ages into an elder stage and dies
+  of old age. Three conditions, all non-negotiable: (1) death is by age alone and neglect
+  can never accelerate it — care shapes who they were, never how long they lived;
+  (2) generations overlap, so the successor is already present and you are never left with
+  an empty room; (3) no notification, no fanfare, no re-engagement — you find out by
+  showing up.
+- **Lifespan is counted in visits (~300 mornings), not calendar days.** Time only passes
+  when you're there. Un-gameable by neglect, and every player gets the full arc at their
+  own pace.
 - **Personality ages clown → deadpan**, and the greeting animation is the instrument that
   tells that story. This is the signature hook.
 - **The aging axis is dependent → independent, NOT loud → quiet.** The adult is dry but
   *busy* — its own project, its own routine, sometimes not even in the room. Building the
   arc as subtraction would mean the reward for months of care is less app, which is
   backwards. Deadpan is a style of reacting, not an absence of reacting.
-- **Adult is the terminal life stage.** The relationship keeps developing through the
-  second pet, not through further growth.
+- **The line continues, the pet doesn't.** Adult → elder → death; the successor it raised
+  carries on and eventually raises its own. Traits inherit, so the line accumulates a
+  history. One permitted extra screen: a family album — allowed because a memorial asks
+  nothing of you. An exception, not a precedent.
 - **Cut from v1: friends/playdates, second pet, native widget.** Friends in particular
   means servers forever — that cut is what keeps this project finishable. The second pet
   is different: it's *wanted* (the deadpan adult needs a foil, and the adult does the
