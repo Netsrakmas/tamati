@@ -28,8 +28,11 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   2 months or 4. Note this is now partly forced — grab-and-wiggle needs a physics rig, so
   a hybrid (rigged body for manipulation, hand-drawn frames for set-piece reactions) is
   the likely answer.
-- Does the pet have a fixed lifespan (reaches adult and stays) or keep aging? Affects
-  whether there's ever a reason to start a second one.
+- How much authored content do the adult's routines and projects need before the endgame
+  feels alive? This is the one genuine content treadmill in the design — bounded, but it
+  needs a number.
+
+*(Resolved: the pet reaches adult and stays. Terminal stage — see decisions.)*
 
 ## Decisions locked
 
@@ -52,9 +55,17 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   makes the project pointless.
 - **Personality ages clown → deadpan**, and the greeting animation is the instrument that
   tells that story. This is the signature hook.
-- **Cut from v1: friends/playdates, multiple pets, native widget.** Parked in IDEE.md
-  with the specific thing that would unblock each. Friends in particular means servers
-  forever — that cut is what keeps this project finishable.
+- **The aging axis is dependent → independent, NOT loud → quiet.** The adult is dry but
+  *busy* — its own project, its own routine, sometimes not even in the room. Building the
+  arc as subtraction would mean the reward for months of care is less app, which is
+  backwards. Deadpan is a style of reacting, not an absence of reacting.
+- **Adult is the terminal life stage.** The relationship keeps developing through the
+  second pet, not through further growth.
+- **Cut from v1: friends/playdates, second pet, native widget.** Friends in particular
+  means servers forever — that cut is what keeps this project finishable. The second pet
+  is different: it's *wanted* (the deadpan adult needs a foil, and the adult does the
+  caring so it adds comedy rather than chores) and it's the planned v2 feature. Out of v1
+  only because the kill-gate comes first.
 - **Not a commercial product.** Funnel math says ~€2k against 3–5 months of animation
   (see IDEE.md). Built because it should exist. If the goal changes to revenue, the
   verdict flips to kill.

@@ -41,17 +41,71 @@ The open-the-app reaction is scaled to how long you've been gone:
 
 Compulsive checking gets *less* reward, not more. The ethical stance encoded as an animation.
 
-### 2. Personality ages — clown to deadpan
+### 2. Personality ages — dependent to independent
 
 Growth is **emotional, not statistical**. No XP bar. You know it grew up because it's
 different to be around.
+
+**The axis is dependent → independent, NOT loud → quiet.** This distinction is
+load-bearing. An arc built as subtraction — baby gets everything, adult gets almost
+nothing — means the reward for months of care is *less app*, handed to the small number
+of people who stuck around longest. Backwards.
+
+| | Baby | Adult |
+|---|---|---|
+| Needs you for | everything | nothing |
+| Does on its own | nothing | plenty |
+| Has an agenda | no | yes, and you're not in it |
+| Amount happening | lots | **also lots** |
+
+Deadpan is a *style of reaction*, not an absence of one. The adult still reacts to
+everything — it's just dry about it.
 
 | Stage | Tone |
 |---|---|
 | Baby | No words, pure slapstick. Head stuck in the food bowl. Startles at its own hiccup. |
 | Kid | Chaotic, over-enthusiastic, has opinions but stupid ones. Peak animation density. |
 | Teen | The turn. Slightly embarrassed by you. Eye-rolls. Still comes — just doesn't run. |
-| Adult | Deadpan, dry, tolerates you. Warmth is rare and lands ten times harder for it. |
+| Adult | Deadpan and dry, but *busy*. Has a life that isn't about you. |
+
+**What the adult actually does**, so the endgame isn't an empty room:
+
+- has **a project going in the corner** that progresses over weeks — you never asked for
+  it, it just started
+- has **a routine** — something coffee-shaped in the morning, sits by the window in the
+  afternoon
+- is **sometimes not there** when you open the app, and wanders back a minute later
+  carrying something
+- **brings you things.** Leaves things out for you.
+- has opinions about the weather, and about Mondays
+
+The emotional inversion is an upgrade, not a fade: with a baby you open the app **because
+it needs you**; with an adult you open it **because you want to know what it's been up
+to.** That's a stronger reason, not a weaker one.
+
+*Cost to flag:* authored routines and projects are a mild content treadmill. Bounded — a
+finite set of behaviours, not an endless one — but real.
+
+Adult is the **terminal life stage**. The relationship keeps developing through the second
+pet (below), not through further growth.
+
+### 2b. A deadpan character needs a foil — the second pet
+
+A clown is funny alone. A straight man is only funny next to something. An adult with
+nobody to be dry *at* has no material, which is the other half of why a quiet endgame
+falls flat.
+
+The foil is **a new baby**. The baby does the slapstick, the adult sighs at it, you're
+the audience. This reverses the earlier reason for cutting multiple pets: the worry was
+chore multiplication, but **the adult does the caring**. More pets = less work and more
+comedy.
+
+- **Art cost: nearly free.** Pet #2 is a baby, and the baby set already exists from
+  stage 1.
+- **Real cost:** two-character scene, a state machine for the pair, adult-reacts-to-baby
+  animations.
+- **Still v2.** The kill-gate does not move. v1's endgame is carried by independence
+  alone.
 
 **The greeting is the instrument that tells this story.** Same beat every time, so change
 is legible:
@@ -134,7 +188,7 @@ absence-scaled greeting · sleep window · tonal aging · the app ends.
 | Cut | Why |
 |---|---|
 | Friends / playdates | Needs a backend, accounts, moderation, servers *forever*. Largest cost in the idea; turns a finished project into a permanent obligation. |
-| Multiple pets | Chore multiplier. Doesn't serve the smile. |
+| Second pet | **v2, and now a wanted feature rather than a rejected one** (see 2b) — it's the foil the deadpan adult needs. Out of v1 only because the kill-gate comes first. |
 | Native widget | Earn it. Web build first. |
 
 **Kill-gate before the art commitment:** the whole project rests on one unproven
@@ -228,9 +282,9 @@ finished it can simply *exist*, forever, which almost nothing on mobile can say.
   ~6× a day (waking 7am, pottering 10am, napping 2pm, asleep 10pm). Well inside
   WidgetKit's refresh budget precisely *because* it doesn't animate. Unblocked by:
   committing to a native build.
-- **Multiple pets as a household** — pet #2 only arrives when #1 is an adult, and the
-  adult helps care for the young one. More pets = *less* work. Unblocked by: v1 proving
-  one pet holds attention.
+- **Multiple pets as a household** — promoted out of "parked" into the planned v2; see
+  mechanic 2b. Pet #2 arrives when #1 is an adult, the adult does the caring, and the two
+  form a comedy duo. Unblocked by: v1 shipping.
 
 ## Sources
 
