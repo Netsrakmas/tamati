@@ -64,13 +64,55 @@ Half a second of animation, months of setup. This is the tell-a-friend moment.
 Production bonus: slapstick gets stale and is expensive to keep making; deadpan needs
 less animation and more timing. The art budget naturally front-loads.
 
-### 3. The app ends
+### 3. Direct manipulation — grab it and wiggle it
 
-Feed, clean, play, and then it settles down, yawns, waves — and there is genuinely
-nothing left to do. No second tab, no shop, no feed. Sayable in one sentence:
-*"it's over in a minute, on purpose."*
+The pet is a **physical object**, not a sprite: spring-chain limbs and ears, real weight,
+squash on impact. Grab it, drag it, shake it, drop it. The physics author the reactions
+for you, infinitely, and they land better than keyframes would. Highest
+smile-per-line-of-code in the project.
 
-### 4. Reaction density over feature count
+**And it ages, exactly like the greeting does** — a second instrument playing the same
+melody:
+
+| Stage | Grab and shake it |
+|---|---|
+| Baby | Shrieks with delight. Flails. Wants more the second you stop. |
+| Kid | Giggles, then gets dizzy, then staggers off. |
+| Teen | *"...put me down."* Goes rigid. |
+| Adult | Goes completely limp. Stares at you. Waits. Does not dignify it. |
+
+### 4. Props, not minigames
+
+**The test for every play idea: does it produce a score, or a reaction?**
+
+Score → cut. That's the slop staircase, and every step feels reasonable at the time:
+minigame → score → high score → coins → shop → browsing → **the app no longer ends.**
+(This is how Pou works.)
+
+Reaction → it's a **prop**, and props are the good version:
+
+- **Ball** — flick it, pet chases. *Baby:* crashes into the wall. *Adult:* watches it roll
+  past, doesn't move, looks at you.
+- **Dangly string** — drag it, it bats at it. Pure cat-toy, no goal, no end.
+- **Peekaboo** — cover it with your finger, it pops out. Devastating on a baby, absurd on
+  an adult.
+- **Bubbles** — tap to blow, it pops them. Ten seconds, no score.
+
+No currency, no shop, no numbers. All age tonally.
+
+### 5. The app's demands end — the toy doesn't
+
+Feed, clean, play: near-instant, three taps, twenty seconds, and then the pet is settled
+and **nothing is asking you for anything**. Stay and mess about with it, or close it.
+
+The promise is not *"you must leave in 30 seconds."* It's **"nothing here will ever ask
+you for another minute."** No second tab, no shop, no feed, no prompt, no badge.
+
+Corollary: the three needs must **not** be tuned as a chore. The moment "play" is a meter
+you have to top up, it stops being play. Satisfy it in one interaction; the toy is
+optional dessert.
+
+### 6. Reaction density over feature count
 
 One pet with 60 animations beats five pets with 12. The art **is** the product; the
 mechanics are excuses for the pet to be charming. Cheap smile-per-euro wins:

@@ -25,7 +25,9 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 - Platform for v1: browser build (fast, no widget, no push) vs native iOS (widget +
   bedtime notification, much slower). Leaning web until the greeting is proven.
 - Art pipeline: hand-animated frames vs skeletal/rigged. Decides whether 60 reactions is
-  2 months or 4.
+  2 months or 4. Note this is now partly forced — grab-and-wiggle needs a physics rig, so
+  a hybrid (rigged body for manipulation, hand-drawn frames for set-piece reactions) is
+  the likely answer.
 - Does the pet have a fixed lifespan (reaches adult and stays) or keep aging? Affects
   whether there's ever a reason to start a second one.
 
@@ -33,7 +35,18 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 
 - **The deliverable is a smile in 30 seconds, not a pet sim.** Every feature answers to
   this. Depth is not a goal.
-- **The app ends.** No second tab, no shop, no feed, no infinite anything.
+- **The app's demands end — the toy doesn't.** Needs are satisfied in ~20 seconds, then
+  nothing asks you for anything. Stay and play or close it. No second tab, no shop, no
+  feed, no prompt, no badge. The promise is "nothing here will ever ask you for another
+  minute," not "you must leave."
+- **Props, not minigames. The test: does it produce a score, or a reaction?** Score → cut.
+  Score leads to high score leads to coins leads to a shop leads to the app never ending,
+  and every step of that staircase feels reasonable at the time. No currency of any kind,
+  ever — currency is the single biggest slop vector.
+- **The pet is a physical object.** Spring-chain limbs, weight, squash on impact. Grabbing
+  and wiggling it is a first-class interaction, and it ages tonally just like the greeting
+  does — a second instrument playing the same melody.
+- **Needs are not chores.** The moment "play" is a meter you top up, it stops being play.
 - **No guilt mechanics.** No death, no streaks held hostage, no "your pet misses you!"
   push. Neglect causes drift, not punishment. This is the whole thesis — relitigating it
   makes the project pointless.
