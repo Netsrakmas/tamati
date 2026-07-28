@@ -37,9 +37,11 @@ document says what to build.
 |---|---|---|
 | Stack | **Vite + TypeScript + PixiJS v8** | v8 is a ground-up rewrite, WebGPU + WebGL2 with Canvas2D fallback, auto-selected; >50% faster and >50% less memory than v7. Mesh/rope primitives map onto a verlet skeleton. |
 | Animation | **Custom verlet rig. No Rive, no Spine, no authoring tool.** | Grab-and-wiggle is a *simulation* requirement — it cannot be keyframed. Authoring tools are keyframe tools; you'd fight them to inject physics. Also avoids Rive's $9/mo export dependency, which contradicts the no-ongoing-obligation decision. |
-| Delivery | **Installable PWA**, offline-capable after first load | Push works on iOS 16.4+ **only** for home-screen-installed PWAs. This is what buys the bedtime notification without a native build. |
+| Delivery | **Native iOS app via Capacitor**, wrapping the same web build | Decided 2026-07-28. iOS has no local *scheduled* web notifications, so a PWA could not send the bedtime push without a server. Capacitor gets local notifications with **no server at all**, and unlocks the widget. A Swift rewrite was rejected: it discards the rig, the greeting and the tests to re-earn working mechanics. |
+| Dev surface | **The web build stays the primary one.** `npm run dev` on any OS. | Capacitor wraps `dist/`. Nothing about day-to-day iteration changes, and the browser harness keeps working. |
+| Notifications | `@capacitor/local-notifications`, rescheduled on each open | Local, not push. Do **not** use the plugin's `repeats` flag — daily-at-a-fixed-time is thinly documented and reported unreliable on iOS. |
 | Persistence | `localStorage`, versioned schema with migration | No accounts, no backend, no network. Ever, in v1. |
-| Backend | **None.** | Locked. A server is a forever-obligation. |
+| Backend | **None.** | Locked, and now genuinely achievable — this was the whole reason native beat PWA-plus-push-server. |
 | Target | Mobile portrait first; 60fps on a 2020-era mid-range phone | |
 
 No network requests at runtime beyond the initial asset load. No analytics. No telemetry.
@@ -252,12 +254,11 @@ The `superpowers` brainstorming skill ends with a self-review for **TBDs, contra
 and ambiguity** before the human ever reads the spec. We skipped it originally. Run it
 after every substantive change. The first run found two real defects:
 
-**① The bedtime notification contradicts the no-backend decision.** §2 and §5 both forbid a
-backend and runtime network. M6 promises one push at 22:00. **Safari on iOS supports Web
-Push but not local scheduled notifications** — `TimestampTrigger` is unsupported, and
-scheduled notifications don't exist in the Notifications API standard at all. A purely
-local PWA cannot wake itself at 22:00. This needs a decision, not a workaround; see
-`PROJECT.md`. **M6 is blocked until it's made.**
+**① ~~The bedtime notification contradicts the no-backend decision.~~ RESOLVED
+2026-07-28.** Safari on iOS supports Web Push but not local *scheduled* notifications, so a
+PWA could not wake itself at 22:00 without a server. Resolved by going native via
+Capacitor: `@capacitor/local-notifications` schedules locally with no server, so the
+no-backend lock survives. M6 unblocked, and the widget is unblocked as M8.
 
 **② Visits were countable by refreshing.** "Lifespan is counted in visits, un-gameable by
 neglect" was true, but the reverse was wide open: `visits += 1` on every launch meant 300
@@ -386,16 +387,47 @@ session** — this is the hand-off mechanism between chats.
       *Gate:* Ten consecutive adult-stage opens produce no repeated behaviour; the room is
       never empty of activity.
 
-- [ ] **M6 — PWA, persistence, and the one notification.** ⚠️ *BLOCKED — see §3.10 ①*
-      Installable PWA, offline-capable. Versioned save schema with migration. The single
-      bedtime push (home-screen install only on iOS 16.4+).
-      *Gate:* Airplane-mode cold start works; a v1 save file loads under a v2 schema; the
-      bedtime push fires once and no other push exists in the codebase.
+- [ ] **M6 — Native shell, persistence, and the one notification.**
+      Capacitor iOS project. Versioned save schema with migration. The single bedtime
+      **local** notification, rescheduled on every open (never `repeats`).
+      *Scheduling logic and its tests already exist* — `src/notify/bedtime.ts`,
+      `tests/bedtime.test.ts`. What remains is Mac-side (see §9).
+      *Gate:* offline cold start works; a v1 save file loads under a v2 schema; the
+      notification fires once at 22:00 on a real device; **no other notification exists in
+      the codebase**; and **A1 re-measured inside WKWebView** — if WebGL is degraded there,
+      force PixiJS's Canvas2D backend and re-measure.
+
+- [ ] **M8 — The widget.** *(unblocked by going native; do not start before M7)*
+      A still life, not a screen: a little framed photo of the pet that changes ~6× a day
+      (waking 07:00, pottering 10:00, napping 14:00, asleep 22:00). It does not animate,
+      which is exactly why it fits inside WidgetKit's refresh budget.
+      Recipe: `capacitor-widget-bridge` writes state to shared UserDefaults via an **App
+      Group**, then calls `reloadAllTimelines()`; a SwiftUI Widget Extension reads
+      `UserDefaults(suiteName:)`.
+      *Gate:* widget shows the correct state for each of the four day phases; refreshes
+      stay within budget; app and widget never disagree about whether the pet is asleep.
 
 - [ ] **M7 — Polish pass.**
       Named-aesthetic transform against the anchors. Audio, haptics, easing review.
       *Gate:* Side-by-side squint test against the anchor references; all acceptance
       criteria A1–A9 green; hand off to `test` for the harness.
+
+## 9. Mac-side steps (cannot be done or verified on Linux)
+
+This repo is developed on Linux; Xcode, CocoaPods, code signing and any real device
+measurement are unavailable here. Everything below is deferred, not forgotten. **No Swift
+has been written yet** — writing code that cannot be compiled or run would be worse than
+leaving a recipe.
+
+1. `npx cap add ios` — generates `ios/`, needs macOS + CocoaPods.
+2. Open in Xcode, set the team and bundle id (`blog.tamati.app`).
+3. M6: verify the notification permission prompt and that 22:00 actually fires.
+4. M6: re-measure A1 in WKWebView. Watch for the **"GPU Process: Canvas Rendering"**
+   regression — a Phaser game went 60fps→30fps on iOS 15 from it. Fall back to Canvas2D
+   if needed.
+5. M8: add the **App Groups** capability to the app target, add a **Widget Extension**
+   target, share the group id with `capacitor-widget-bridge`.
+6. Apple Developer Program, €99/yr, required to run on a device or ship.
 
 ## 8. Open questions (do not silently resolve — flag them)
 

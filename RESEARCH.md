@@ -4,6 +4,80 @@ Evidence trail for the spec. Append dated addenda; never overwrite.
 
 ---
 
+## Addendum 2026-07-28 (c) — going native (mode B)
+
+Decision taken: **option (a), native app.** This addendum covers *how*, because the obvious
+reading — rewrite in Swift — is the wrong one.
+
+### Capacitor, not a rewrite
+
+A Swift/SpriteKit rewrite discards the verlet rig, the greeting, the pose system, the
+tests — every line of M1 — to re-earn mechanics that already work. Capacitor wraps the
+existing web build in a genuine native app, keeps Linux as the fast dev surface, and buys
+both things the decision was made for:
+
+| Want | How, under Capacitor | Server needed? |
+|---|---|---|
+| Bedtime notification | `@capacitor/local-notifications` — "schedule device notifications **locally (without a server)**", with `at` for the time and `repeats` for daily | **No** |
+| Home-screen widget | `capacitor-widget-bridge` (v8) — writes to shared UserDefaults via **App Groups**, then `reloadAllTimelines()`; a SwiftUI Widget Extension reads `UserDefaults(suiteName:)` | **No** |
+
+This is the entire reason option (a) beat (b): local notifications are genuinely local, so
+the no-backend lock survives intact. It was never the notification that needed a server —
+only *web* push did.
+
+### Known gotcha: repeating daily notifications
+
+Multiple reports of `repeats` + a specific time-of-day being fiddly on iOS: the `on`,
+`count`, `repeat` and `every` parameters are thinly documented and the `on` object with an
+`hour` property has been troublesome. **Mitigation:** don't rely on `repeats`. Schedule the
+next single notification explicitly each time the app is opened, and cancel-then-reschedule.
+That is also more correct for us — the sleep window should track the user's actual clock,
+and rescheduling on every visit is exactly the moment we know it.
+
+### ⚠️ Risk to verify on device: WKWebView WebGL performance
+
+Real and documented. A Phaser game ran **60fps on iOS 14 and 30fps on iOS 15**, traced to
+an experimental **"GPU Process: Canvas Rendering"** feature; with it enabled in WebGL mode
+the scene could stick when moving. PixiJS has its own long-standing issue report about
+severe performance loss when a WebGL game is added to the iOS home screen.
+
+Why it's probably survivable here, but must still be measured:
+- Our own per-frame CPU cost is **0.28ms mean / 3.8ms worst of a 16ms budget** — the app is
+  not the bottleneck.
+- The pet is procedural `Graphics` — circles, ellipses, a couple of curves — not thousands
+  of sprites. Capacitor's own guidance is that WebGL matters for bullet-hell sprite counts;
+  this is nearer the "runs beautifully on Canvas" end.
+- PixiJS v8 auto-selects WebGPU → WebGL2 → Canvas2D, so a fallback path already exists.
+
+**Action:** A1 must be measured in the real WKWebView on a real device, and if WebGL is
+degraded, force the Canvas2D backend and re-measure. Recorded as an M6 gate.
+
+### What cannot be verified in this environment
+
+Honest boundary: this container is Linux with no Xcode, no macOS and no device. Everything
+below is unbuildable and untestable here, and is written to be picked up on a Mac:
+
+- `npx cap add ios`, CocoaPods, any build or archive
+- The SwiftUI Widget Extension (must be added as an Xcode target)
+- App Groups capability and code signing
+- Any real measurement of A1, or of the notification actually firing at 22:00
+
+What *is* verifiable here: the TypeScript scheduling layer and its tests, the Capacitor
+config, and the web build itself.
+
+### Sources
+
+- [Games | Capacitor Documentation](https://capacitorjs.com/docs/guides/games)
+- [Local Notifications Capacitor Plugin API](https://capacitorjs.com/docs/apis/local-notifications) · [plugin README](https://github.com/ionic-team/capacitor-plugins/blob/main/local-notifications/README.md?plain=1)
+- [Setting repeatable notifications on a specific day — capacitor discussion #2752](https://github.com/ionic-team/capacitor/discussions/2752)
+- [How to schedule LocalNotification every day at HH:mm — Ionic Forum](https://forum.ionicframework.com/t/how-to-schedule-localnotification-every-day-at-hh-mm-with-capacitor/200912)
+- [kisimediaDE/capacitor-widget-bridge](https://github.com/kisimediade/capacitor-widget-bridge) · [How to Add Widgets to Your Capacitor App](https://medium.com/@kisimedia/how-to-add-widgets-to-your-capacitor-app-ios-android-76fefbea5cb8)
+- [Sharing data with a Widget — Use Your Loaf](https://useyourloaf.com/blog/sharing-data-with-a-widget/)
+- [WebGL performance significantly slower since iOS 15 — cordova-ios #1246](https://github.com/apache/cordova-ios/issues/1246)
+- [Adding WebGL game to iOS home screen causes severe performance loss — pixijs #3697](https://github.com/pixijs/pixijs/issues/3697)
+
+---
+
 ## Addendum 2026-07-28 (b) — prompt/spec craft, done properly
 
 The first pass at angle 3 was thin: one search, all enterprise "spec for AI agents"

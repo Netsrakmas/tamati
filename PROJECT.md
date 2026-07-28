@@ -1,8 +1,8 @@
 # Tamati
 
 **Phase:** 2 — build (M1 code complete, human kill-gate not yet run)
-**Stack:** Vite + TypeScript + PixiJS v8, installable PWA. Custom verlet rig, no
-animation authoring tool.
+**Stack:** Vite + TypeScript + PixiJS v8, wrapped as a native iOS app via Capacitor.
+Custom verlet rig, no animation authoring tool. Web build stays the dev surface.
 **Repo:** github.com/Netsrakmas/tamati
 **Live:** not deployed
 **Updated:** 2026-07-28
@@ -15,7 +15,8 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 ## Phase log
 
 - 0 idee — **done** (verdict: build, as a craft project not a business). See IDEE.md
-- 1 plan — **done.** See RESEARCH.md, PROMPT.md. 7 milestones.
+- 1 plan — **done.** See RESEARCH.md, PROMPT.md. 8 milestones (M8 = widget, added when
+  going native unblocked it).
 - 2 build — **M1 built, gate PARTIAL.** 24 unit tests + 17 browser checks green. Two
   criteria unverifiable in a GPU-less container (raster fps, end-to-end shake gesture) —
   both documented in PROMPT.md M1 rather than waved through. **The human kill-gate — five
@@ -27,21 +28,15 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 
 ## Open questions
 
-- **DECISION NEEDED — the bedtime notification needs a server, or a native app.** Safari on
-  iOS supports Web Push but *not* local scheduled notifications (`TimestampTrigger` is
-  unsupported; scheduled notifications aren't in the standard). A purely local PWA cannot
-  wake itself at 22:00. Three options, none free:
-  (a) **native app** — local notifications work with no server, and it also unlocks the
-  parked widget, but it's a much bigger build;
-  (b) **PWA + a tiny push server** — breaks the locked no-backend decision and becomes a
-  forever-obligation;
-  (c) **drop the bedtime push from web v1** — keeps every lock intact, loses a signature
-  mechanic.
-  This blocks M6 only; M1–M5 are unaffected.
-- Manual PWA install on iOS is a real funnel cost (no install prompt exists). Accepted for
-  v1 since v1 isn't chasing installs; revisit if this ever ships properly.
+- **Does WKWebView cost us the frame rate?** A Phaser game went 60fps → 30fps on iOS 15
+  from an experimental GPU-process canvas feature, and PixiJS has its own report of severe
+  loss when a WebGL game is added to the iOS home screen. Our CPU cost is 0.14ms of a 16ms
+  budget and the pet is simple procedural shapes, so it should survive — but this is an M6
+  gate, not an assumption. PixiJS's Canvas2D fallback is the escape hatch.
 - A1 (60fps) needs one run on real hardware. Cannot be judged in a GPU-less container, and
-  the CPU-side evidence (0.28ms of a 16ms budget) is encouraging but not proof.
+  the CPU-side evidence is encouraging but not proof.
+- App Store review and a €99/yr developer account are now on the critical path to shipping.
+  Neither affects M1–M5.
 - How much authored content do the adult's routines and projects need before the endgame
   feels alive? Mortality caps this treadmill rather than removing it — it still needs a
   number.
@@ -91,7 +86,8 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   carries on and eventually raises its own. Traits inherit, so the line accumulates a
   history. One permitted extra screen: a family album — allowed because a memorial asks
   nothing of you. An exception, not a precedent.
-- **Cut from v1: friends/playdates, second pet, native widget.** Friends in particular
+- **Cut from v1: friends/playdates, second pet.** *(The widget is no longer cut — going
+  native unblocked it; it is now M8, after the polish pass.)* Friends in particular
   means servers forever — that cut is what keeps this project finishable. The second pet
   is different: it's *wanted* (the deadpan adult needs a foil, and the adult does the
   caring so it adds comedy rather than chores) and it's the planned v2 feature. Out of v1
@@ -107,9 +103,11 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   cannot be keyframed; authoring tools are keyframe tools. Also keeps the project free of
   Rive's $9/mo export dependency, which would contradict no-ongoing-obligation. Rain
   World's point-mass paper-doll model is the reference.
-- ~~**Web-first PWA, not native.**~~ **PARTLY RETRACTED 2026-07-28.** Push does *arrive* on
-  iOS PWAs, but that finding never asked who *sends* it — iOS has no local scheduled
-  notifications, so the bedtime push needs a server. Web-first still stands for M1–M5; the
-  notification is an open decision above.
+- **Native iOS via Capacitor — decided 2026-07-28.** iOS has no local *scheduled* web
+  notifications, so a PWA could only get the bedtime push with a server. Capacitor
+  schedules it locally with **no server**, which is what keeps the no-backend lock intact,
+  and it unlocks the parked widget as M8. A Swift rewrite was rejected: it would discard
+  the rig, the greeting and the tests to re-earn mechanics that already work. **The web
+  build remains the dev surface** and the browser harness still applies.
 - **Palette and shape language are locked in PROMPT.md §3.** Style is decided in plan, not
   in art. Do not relitigate during asset production.

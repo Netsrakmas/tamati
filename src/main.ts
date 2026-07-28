@@ -10,6 +10,7 @@ import { greetingFor } from './pet/greeting'
 import { drawRoom, roomColours, timeOfDay } from './room/scene'
 import { load, save, type Save } from './persist/store'
 import { absenceOverrideMs } from './time/clock'
+import { setUpBedtimeNotification } from './notify/capacitor'
 
 const STEP_MS = 1000 / RIG.fixedStepHz
 const STEP_S = STEP_MS / 1000
@@ -234,6 +235,9 @@ async function boot(): Promise<void> {
   })
   window.addEventListener('pagehide', persist)
   persist()
+
+  // Reschedule the one notification on every open. No-ops on web.
+  void setUpBedtimeNotification()
 }
 
 boot()

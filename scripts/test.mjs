@@ -205,15 +205,31 @@ async function main() {
       },
       { cx, cy: headY - 100 },
     )
-    // Whether this can be judged at all depends on how fast the page can process events.
-    // With no GPU the main thread is saturated by software rasterisation and tops out at
-    // ~4Hz — below the Nyquist rate for a 4Hz gesture, so a negative here means nothing.
+    // Two different things are worth checking here, and only one of them is judgeable in
+    // this environment.
+    //
+    // (1) Wiring — does a pointer gesture actually reach the detector? Always judgeable.
+    // (2) Threshold — does a 4Hz gesture read as a shake? Needs enough samples to resolve
+    //     turning points, which is roughly 8 per cycle, i.e. ~32Hz. Nyquist (>8Hz) is the
+    //     floor for seeing the wave at all, not for locating its extremes. With no GPU the
+    //     main thread is saturated by software rasterisation and delivers ~5–12Hz, so a
+    //     negative there says nothing about the code. Judging it anyway made this check
+    //     flaky on machine luck.
     const sampleHz = shakeResult.sampleHz
-    if (sampleHz < 10) {
+    const RELIABLE_HZ = 32
+
+    shakeResult.reversals > 0
+      ? pass(
+          'shake input path reaches the detector',
+          `${shakeResult.reversals} reversals seen at ${sampleHz.toFixed(0)}Hz`,
+        )
+      : fail('shake input path reaches the detector', 'no reversals registered at all')
+
+    if (sampleHz < RELIABLE_HZ) {
       results.push({
         ok: true,
-        n: 'shake gesture NOT VERIFIABLE here',
-        d: `page can only sample ~${sampleHz.toFixed(1)}Hz (needs >8Hz for a 4Hz shake); detector is covered by tests/shake.test.ts at 30/60/120/240Hz`,
+        n: 'shake THRESHOLD not verifiable here',
+        d: `page samples ~${sampleHz.toFixed(0)}Hz; locating turning points in a 4Hz gesture needs ~${RELIABLE_HZ}Hz. Covered by tests/shake.test.ts at 30/60/120/240Hz plus negative cases`,
       })
     } else if (shakeResult.shaking) {
       pass('shake detected (4Hz gesture)', `${shakeResult.reversals} reversals at ${sampleHz.toFixed(0)}Hz`)
