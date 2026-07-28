@@ -1,7 +1,8 @@
 # Tamati
 
-**Phase:** 0 — idee (done, verdict: build) → next up phase 1, plan
-**Stack:** undecided — web build first (see decisions), native iOS only if v1 earns it
+**Phase:** 1 — plan (spec written, not yet executed)
+**Stack:** Vite + TypeScript + PixiJS v8, installable PWA. Custom verlet rig, no
+animation authoring tool.
 **Repo:** github.com/Netsrakmas/tamati
 **Live:** not deployed
 **Updated:** 2026-07-28
@@ -14,7 +15,8 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 ## Phase log
 
 - 0 idee — **done** (verdict: build, as a craft project not a business). See IDEE.md
-- 1 plan — not started
+- 1 plan — **spec written, not executed.** See RESEARCH.md, PROMPT.md. 7 milestones, all
+  unticked. Stopped here deliberately: the user asked for a plan, not a build.
 - 2 build — not started
 - 3 art — not started
 - 4 test — not started
@@ -22,12 +24,8 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 
 ## Open questions
 
-- Platform for v1: browser build (fast, no widget, no push) vs native iOS (widget +
-  bedtime notification, much slower). Leaning web until the greeting is proven.
-- Art pipeline: hand-animated frames vs skeletal/rigged. Decides whether 60 reactions is
-  2 months or 4. Note this is now partly forced — grab-and-wiggle needs a physics rig, so
-  a hybrid (rigged body for manipulation, hand-drawn frames for set-piece reactions) is
-  the likely answer.
+- Manual PWA install on iOS is a real funnel cost (no install prompt exists). Accepted for
+  v1 since v1 isn't chasing installs; revisit if this ever ships properly.
 - How much authored content do the adult's routines and projects need before the endgame
   feels alive? Mortality caps this treadmill rather than removing it — it still needs a
   number.
@@ -87,3 +85,14 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   verdict flips to kill.
 - **Kill-gate before the art commitment:** prove the greeting makes a stranger smile with
   ~3 animations and no game attached, before committing months to the full animation set.
+  Formalised as milestone M1 in PROMPT.md — five people handed the phone cold, at least
+  three must visibly smile or laugh unprompted.
+- **Custom verlet rig, not Rive or Spine.** Grab-and-wiggle is a simulation requirement and
+  cannot be keyframed; authoring tools are keyframe tools. Also keeps the project free of
+  Rive's $9/mo export dependency, which would contradict no-ongoing-obligation. Rain
+  World's point-mass paper-doll model is the reference.
+- **Web-first PWA, not native.** Push works on iOS 16.4+ for home-screen-installed PWAs, so
+  the bedtime notification — a signature mechanic — does not need a native build. Only the
+  widget does, and it stays parked.
+- **Palette and shape language are locked in PROMPT.md §3.** Style is decided in plan, not
+  in art. Do not relitigate during asset production.
