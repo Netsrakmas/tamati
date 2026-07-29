@@ -4,7 +4,9 @@
 **Stack:** Vite + TypeScript + PixiJS v8, wrapped as a native iOS app via Capacitor.
 Custom verlet rig, no animation authoring tool. Web build stays the dev surface.
 **Repo:** github.com/Netsrakmas/tamati
-**Live:** not deployed
+**Live:** pending — will be https://netsrakmas.github.io/tamati/ once Pages is enabled
+with Source = GitHub Actions (Settings → Pages). The workflow's `verify` job is green;
+`deploy` 404s until that setting exists.
 **Updated:** 2026-07-28
 
 ## One-liner
@@ -23,8 +25,11 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   people, three unprompted smiles — has not been run, so M1 stays unticked.** That is the
   milestone's actual purpose; everything else is preamble.
 - 3 art — not started
-- 4 test — not started
-- 5 ship — not started
+- 4 test — **harness built and running in CI.** `scripts/test.mjs`, 18 checks, green on a
+  real runner in 61s. Two criteria remain unjudgeable without a GPU (see M1).
+- 5 ship — **workflow in place, awaiting one manual setting.** Deploying the web build
+  early and out of order on purpose: the M1 kill-gate needs a link people can open on a
+  phone, and that doesn't need the App Store.
 
 ## Open questions
 
