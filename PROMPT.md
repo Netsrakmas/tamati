@@ -91,6 +91,38 @@ export const PALETTE = {
 Rules: no pure black, no pure white, no gradient on the pet itself (gradients live in the
 room light only), max **two** accent hues on screen at once.
 
+### 3.2b Camera and world — LOCKED
+
+**3/4 top-down.** The ground plane recedes toward a horizon at ~24% screen height; the pet
+stays **front-facing**. Stardew / Zelda / Pokémon, not a floor-plan.
+
+> ❌ **True bird's-eye is forbidden.** Looking straight down shows the pet's back, and the
+> face is the entire emotional instrument — the whole clown→deadpan arc is carried by it.
+> A viewpoint that hides the face destroys the thesis. This is not an art preference.
+
+World space is separate from screen space, and the rig knows nothing about it:
+
+| | |
+|---|---|
+| `world.x` | −1 → 1, left to right |
+| `world.y` | 0 → 1, far to near |
+| Depth scale | `0.62 + 0.38·y` — the plane also narrows toward the horizon |
+| Greeting spot | `{x: 0, y: 0.86}` — near the camera, centred |
+| Far spot | `{x: 0, y: 0.2}` — where it comes from when it approaches you |
+
+Consequences worth knowing:
+
+- **"Runs at the camera" is now literal.** The greeting's `approach` (0 = far, 1 = near)
+  drives real movement in depth instead of faking it with scale.
+- **A contact shadow is mandatory, not decoration.** It is the only thing distinguishing
+  "hopping" from "getting bigger". It shrinks and fades with height off the surface.
+- **The pet wanders** between greetings — picks a target, walks, pauses, repeats, with a
+  small hop per step so the rig's own landing squash sells the gait. This is the
+  groundwork for the locked dependent→independent arc: the adult will have somewhere to
+  be, and a plane to be it on.
+- **Grab carries it sideways across the plane; depth stays fixed while held.** Screen-y
+  during a lift means *height*, not distance, and conflating the two feels wrong.
+
 ### 3.3 Shape language
 
 Round-dominant throughout — circles read as safe, warm and approachable, and ~90% of
@@ -316,6 +348,8 @@ add these back. Do not.
 - ❌ **No timers or countdowns gating an action.**
 - ❌ **No badge counts, no red dots, no dark patterns.**
 - ❌ **No accounts, no backend, no network at runtime, no analytics.**
+- ❌ **No true bird's-eye camera.** It hides the face, which is the emotional instrument
+  the entire aging arc runs through. 3/4 view, pet front-facing. See §3.2b.
 - ❌ **Out of v1 scope entirely:** friends/playdates, second pet, elder stage, death,
   inheritance, family album, native widget.
 
@@ -342,7 +376,8 @@ session** — this is the hand-off mechanism between chats.
 
 - [ ] **M1 — The kill-gate: greeting + wiggle, baby only.** ← *built; human gate outstanding*
       Vertical slice. Baby stage only. Absence-tiered greeting backed by persisted
-      `lastSeen`. Full verlet rig with grab, drag, shake, drop. A floor and a background.
+      `lastSeen`. Full verlet rig with grab, drag, shake, drop. A 3/4 ground plane with a
+      contact shadow, and wandering between greetings.
       **No needs, no growth, no props, no room dressing.**
       *Gate:* A1, A2, A3, A4, A6, A9 pass **and** — the real test — five people are handed
       the phone cold, and **at least three visibly smile or laugh unprompted.** If that
@@ -365,8 +400,10 @@ session** — this is the hand-off mechanism between chats.
         kill-gate and the box stays unticked until it happens.
 
 - [ ] **M2 — Needs and the room.**
-      Feed, clean, play. One interaction each, no meters. Props: bowl, sponge, ball. Room
-      with time-of-day light (day/dusk/night gradients).
+      Feed, clean, play. One interaction each, no meters. Props: bowl, sponge, ball, placed
+      on the ground plane. Room dressing and time-of-day light (day/dusk/night).
+      *Note:* sky and ground currently sit close in value, so the plane reads flat. Fix it
+      with dressing and light, **not** by editing the locked palette.
       *Gate:* A8 passes; a full care cycle completes in ≤ 30s; no numeric UI anywhere.
 
 - [ ] **M3 — Sleep window and the settle state.**

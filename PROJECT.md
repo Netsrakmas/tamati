@@ -116,3 +116,8 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
   build remains the dev surface** and the browser harness still applies.
 - **Palette and shape language are locked in PROMPT.md §3.** Style is decided in plan, not
   in art. Do not relitigate during asset production.
+- **3/4 top-down camera, pet front-facing — decided 2026-07-29.** The pet wanders a ground
+  plane rather than standing on a side-on floor line. **True bird's-eye is forbidden**: it
+  shows the pet's back, and the face is the instrument the entire clown-to-deadpan arc runs
+  through. Camera angle had never been locked before this — it was an implementation
+  default, not a decision.

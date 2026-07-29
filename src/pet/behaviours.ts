@@ -6,6 +6,24 @@ import { Rig } from '../rig/verlet'
 import { blendPose, type PoseName } from '../rig/poses'
 import { IDLE, SHAKE, SQUASH } from '../style/motion'
 import type { GreetingSpec } from './greeting'
+import {
+  GREETING_SPOT,
+  distance,
+  randomWanderTarget,
+  screenToWorldX,
+  type Ground,
+  type WorldPos,
+} from '../world/ground'
+
+/** Where it comes from when it approaches you: the back of the plane, dead centre. */
+const FAR_SPOT: WorldPos = { x: 0, y: 0.2 }
+
+const WANDER = {
+  speed: 0.34, // world units per second
+  pauseMs: [1400, 5200] as const,
+  hopEveryMs: 380,
+  arriveEpsilon: 0.04,
+} as const
 
 export type Face = 'normal' | 'happy' | 'delighted' | 'blink' | 'joy'
 
@@ -20,10 +38,21 @@ export class Behaviour {
   private hops: Hop[] = []
   private nextHop = 0
 
-  /** 0 = far from camera, 1 = right up against it. */
+  /** 0 = far from camera, 1 = right up against it. Drives depth along the ground plane. */
   approach = 1
   face: Face = 'normal'
   shakePx = 0
+
+  /** Position on the ground plane. The rig knows nothing about this. */
+  world: WorldPos = { ...GREETING_SPOT }
+  /** -1 facing left, 1 facing right. */
+  facing: 1 | -1 = 1
+  private greetFrom: WorldPos = { ...GREETING_SPOT }
+  private wanderTarget: WorldPos | null = null
+  private pauseUntil = 0
+  private lastHopAt = 0
+  /** True while walking somewhere, so the renderer can lean it into the movement. */
+  walking = false
 
   private blinkAt = 0
   private blinkUntil = 0
@@ -46,14 +75,14 @@ export class Behaviour {
   private poseTo: PoseName = 'idle'
   private poseT = 1
 
-  constructor(private rig: Rig, private baseRootY: number) {
-    this.rig.rootY = baseRootY
+  constructor(private rig: Rig) {
     this.blinkAt = randBetween(IDLE.blinkEveryMs[0], IDLE.blinkEveryMs[1])
   }
 
-  /** Called on resize — the floor moves, so the pet's resting height must follow. */
-  setBaseRootY(y: number): void {
-    this.baseRootY = y
+  /** Carry the pet sideways across the plane while it's held. Depth stays fixed. */
+  dragTo(ground: Ground, screenX: number): void {
+    this.world = { x: screenToWorldX(ground, screenX, this.world.y), y: this.world.y }
+    this.wanderTarget = null
   }
 
   playGreeting(spec: GreetingSpec): void {
@@ -61,6 +90,14 @@ export class Behaviour {
     this.t = 0
     this.nextHop = 0
     this.shakePx = 0
+    this.wanderTarget = null
+
+    // Tiers that approach you start at the back of the plane and come forward; the
+    // ones that don't are already near, and stay put. In 3/4 view "runs at the camera"
+    // is a real walk in depth rather than a scale trick.
+    const comesToYou = spec.tier === 'trot' || spec.tier === 'joy' || spec.tier === 'driftJoy'
+    this.greetFrom = comesToYou ? { ...FAR_SPOT } : { ...GREETING_SPOT }
+    this.world = { ...this.greetFrom }
 
     switch (spec.tier) {
       case 'glance':
@@ -228,8 +265,8 @@ export class Behaviour {
       this.rig.index(n),
     )
 
-    // --- root position: approach moves it toward the camera ----------------
-    this.rig.rootY = this.baseRootY - (1 - this.approach) * 70
+    // --- position on the ground plane --------------------------------------
+    this.updateWorld(dtMs, nowMs)
 
     // --- blinking ----------------------------------------------------------
     if (!this.grabbing && !this.greeting) {
@@ -252,6 +289,56 @@ export class Behaviour {
     }
   }
 
+  /**
+   * Wandering. This is what makes it feel like it has a life rather than being parked
+   * in the middle of the screen waiting for you — and it's the groundwork for the locked
+   * dependent→independent arc, where the adult has its own agenda.
+   */
+  private updateWorld(dtMs: number, nowMs: number): void {
+    const prevX = this.world.x
+
+    if (this.greeting) {
+      // Depth is driven by the greeting's own approach curve.
+      const k = ease(this.approach)
+      this.world = {
+        x: this.greetFrom.x + (GREETING_SPOT.x - this.greetFrom.x) * k,
+        y: this.greetFrom.y + (GREETING_SPOT.y - this.greetFrom.y) * k,
+      }
+      this.walking = k > 0 && k < 1
+    } else if (this.grabbing) {
+      this.walking = false
+    } else if (nowMs < this.pauseUntil) {
+      this.walking = false
+    } else {
+      if (!this.wanderTarget) this.wanderTarget = randomWanderTarget()
+      const target = this.wanderTarget
+      const d = distance(this.world, target)
+      if (d < WANDER.arriveEpsilon) {
+        this.wanderTarget = null
+        this.pauseUntil =
+          nowMs + randBetween(WANDER.pauseMs[0], WANDER.pauseMs[1])
+        this.walking = false
+      } else {
+        const step = (WANDER.speed * dtMs) / 1000
+        const k = Math.min(1, step / d)
+        this.world = {
+          x: this.world.x + (target.x - this.world.x) * k,
+          y: this.world.y + (target.y - this.world.y) * k,
+        }
+        this.walking = true
+        // A little hop per step reads as walking without needing a leg cycle — and the
+        // rig's own landing squash does the rest for free.
+        if (nowMs - this.lastHopAt > WANDER.hopEveryMs) {
+          this.lastHopAt = nowMs
+          this.impulse('body', 2.6)
+        }
+      }
+    }
+
+    const dx = this.world.x - prevX
+    if (Math.abs(dx) > 0.0015) this.facing = dx > 0 ? 1 : -1
+  }
+
   /** Visual scale multiplier. Baby deliberately breaks "feel it, don't see it". */
   squashScale(): { x: number; y: number } {
     if (this.squashT < 0) return { x: 1, y: 1 }
@@ -263,11 +350,6 @@ export class Behaviour {
     }
     const t = (k - 0.45) / 0.55
     return { x: lerp(SQUASH.overshoot.x, 1, t), y: lerp(SQUASH.overshoot.y, 1, t) }
-  }
-
-  /** Perspective: further away reads as smaller. */
-  approachScale(): number {
-    return 0.78 + 0.22 * this.approach
   }
 
   breathe(nowMs: number): number {

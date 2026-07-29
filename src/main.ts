@@ -7,7 +7,8 @@ import { poseTargets } from './rig/poses'
 import { Behaviour } from './pet/behaviours'
 import { drawPet } from './pet/render'
 import { greetingFor } from './pet/greeting'
-import { drawRoom, roomColours, timeOfDay } from './room/scene'
+import { drawGround, drawShadow, roomColours, timeOfDay } from './room/scene'
+import { makeGround, worldToScreen, type Ground } from './world/ground'
 import { load, save, type Save } from './persist/store'
 import { absenceOverrideMs } from './time/clock'
 import { setUpBedtimeNotification } from './notify/capacitor'
@@ -32,15 +33,17 @@ async function boot(): Promise<void> {
   const world = new Container()
   app.stage.addChild(world)
 
-  const roomG = new Graphics()
-  world.addChild(roomG)
+  const groundG = new Graphics()
+  const shadowG = new Graphics()
+  world.addChild(groundG, shadowG)
 
   const petBox = new Container()
   const petG = new Graphics()
   petBox.addChild(petG)
   world.addChild(petBox)
 
-  let floorY = 0
+  let ground: Ground = makeGround(app.screen.width, app.screen.height)
+
   const rig = new Rig(
     BABY.points.map((p) => ({ ...p })),
     BABY.bones.map((b) => ({ ...b })),
@@ -49,34 +52,37 @@ async function boot(): Promise<void> {
   )
   rig.pose = poseTargets('idle', (n) => rig.index(n))
 
-  let behaviour: Behaviour
-
   function layout(): void {
     // app.screen is the logical drawing area. renderer.width is NOT the same thing and
-    // dividing it by resolution silently renders the room at quarter size.
-    const w = app.screen.width
-    const h = app.screen.height
-    floorY = Math.round(h * 0.8)
-    rig.floorY = floorY
-    rig.rootX = Math.round(w / 2)
+    // dividing it by resolution silently renders everything at quarter size.
+    ground = makeGround(app.screen.width, app.screen.height)
     const tod = timeOfDay(new Date())
-    drawRoom(roomG, w, h, floorY, tod)
-    app.renderer.background.color = roomColours(tod).wall
+    drawGround(groundG, ground, tod)
+    app.renderer.background.color = roomColours(tod).sky
   }
 
   layout()
-  // Seed the rig at its rest pose so the first frame isn't a creature falling from orbit.
-  for (const p of rig.points) {
-    const t = BABY.points.find((q) => q.name === p.name)!
-    p.x = p.px = rig.rootX + t.x
-    p.y = p.py = floorY + t.y
-  }
-  behaviour = new Behaviour(rig, floorY)
+  const behaviour = new Behaviour(rig)
 
-  window.addEventListener('resize', () => {
-    layout()
-    behaviour.setBaseRootY(floorY)
-  })
+  // Seed the rig at its rest pose on the ground, so the first frame isn't a creature
+  // falling from orbit.
+  function placeRig(): { x: number; y: number; scale: number } {
+    const p = worldToScreen(ground, behaviour.world)
+    rig.rootX = p.x
+    rig.rootY = p.y
+    rig.floorY = p.y
+    return p
+  }
+  {
+    const p = placeRig()
+    for (const q of rig.points) {
+      const t = BABY.points.find((b) => b.name === q.name)!
+      q.x = q.px = p.x + t.x
+      q.y = q.py = p.y + t.y
+    }
+  }
+
+  window.addEventListener('resize', layout)
 
   // --- the greeting -------------------------------------------------------
   const override = absenceOverrideMs(location.search)
@@ -95,10 +101,10 @@ async function boot(): Promise<void> {
   app.stage.hitArea = { contains: () => true }
 
   function toRigSpace(gx: number, gy: number): { x: number; y: number } {
-    const s = petBox.scale.x || 1
+    const sx = petBox.scale.x || 1
     const sy = petBox.scale.y || 1
     return {
-      x: rig.rootX + (gx - petBox.x) / s,
+      x: rig.rootX + (gx - petBox.x) / Math.abs(sx),
       y: rig.rootY + (gy - petBox.y) / sy,
     }
   }
@@ -126,6 +132,9 @@ async function boot(): Promise<void> {
     const local = toRigSpace(e.global.x, e.global.y)
     rig.grabX = local.x
     rig.grabY = local.y
+    // Carry the pet across the ground plane with the finger. Depth is held fixed —
+    // screen-y while lifted means height, not distance, and conflating them feels wrong.
+    behaviour.dragTo(ground, e.global.x)
     behaviour.onGrabMove(e.global.x, performance.now())
   })
 
@@ -175,10 +184,15 @@ async function boot(): Promise<void> {
     get shakeSampleCount() {
       return behaviour.shakeSampleCount
     },
-    get floorY() {
-      return floorY
+    get world() {
+      return { ...behaviour.world }
     },
-    /** ms spent in sim + draw last frame. Portable; raster cost is not. */
+    get walking() {
+      return behaviour.walking
+    },
+    get lift() {
+      return liftPx
+    },
     cpuMs: 0,
   }
 
@@ -186,11 +200,19 @@ async function boot(): Promise<void> {
   let acc = 0
   let fpsAvg = 60
   let firstFrameDone = false
+  let liftPx = 0
   const hook = (window as unknown as Record<string, { ready: boolean; cpuMs: number }>).__tamati
 
   app.ticker.add((ticker) => {
     const cpu0 = performance.now()
     const dt = Math.min(ticker.elapsedMS, 100) // never let a stalled tab explode the sim
+    const t = performance.now()
+
+    // Behaviour moves the pet across the ground first, then the rig is placed there and
+    // simulated. That ordering is what makes the body trail behind the walk.
+    behaviour.update(dt, t)
+    const p = placeRig()
+
     acc += dt
     let steps = 0
     while (acc >= STEP_MS && steps < 5) {
@@ -199,15 +221,22 @@ async function boot(): Promise<void> {
       steps++
     }
 
-    const t = performance.now()
-    behaviour.update(dt, t)
+    // How far off the ground it is, for the shadow. Without this a hop reads as the pet
+    // simply getting bigger.
+    let lowest = -Infinity
+    for (const q of rig.points) lowest = Math.max(lowest, q.y + q.radius)
+    liftPx = Math.max(0, rig.floorY - lowest)
+
+    drawShadow(shadowG, ground, behaviour.world, liftPx * p.scale)
 
     const sq = behaviour.squashScale()
     const br = behaviour.breathe(t)
-    const ap = behaviour.approachScale()
-    petBox.x = rig.rootX + (behaviour.shakePx ? (Math.random() - 0.5) * 2 * behaviour.shakePx : 0)
-    petBox.y = rig.rootY + (behaviour.shakePx ? (Math.random() - 0.5) * 2 * behaviour.shakePx : 0)
-    petBox.scale.set(sq.x * ap, sq.y * br * ap)
+    const jitter = behaviour.shakePx ? (Math.random() - 0.5) * 2 * behaviour.shakePx : 0
+    petBox.x = p.x + jitter
+    petBox.y = p.y + jitter
+    petBox.scale.set(p.scale * sq.x, p.scale * sq.y * br)
+    // Lean into the direction of travel. Cheap, and it stops walking looking like sliding.
+    petBox.rotation = behaviour.walking ? behaviour.facing * 0.05 : 0
 
     drawPet(petG, rig, behaviour.face)
 
@@ -221,7 +250,10 @@ async function boot(): Promise<void> {
 
     if (dbg) {
       fpsAvg = fpsAvg * 0.95 + ticker.FPS * 0.05
-      dbg.text = `${fpsAvg.toFixed(0)} fps · ${spec.tier} · visits ${state.visits}`
+      dbg.text =
+        `${fpsAvg.toFixed(0)} fps · ${spec.tier} · visits ${state.visits}\n` +
+        `world ${behaviour.world.x.toFixed(2)},${behaviour.world.y.toFixed(2)} ` +
+        `${behaviour.walking ? 'walking' : 'still'} lift ${liftPx.toFixed(0)}`
     }
   })
 

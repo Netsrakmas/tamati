@@ -13,7 +13,7 @@ function makeBehaviour(): Behaviour {
   )
   rig.rootX = 300
   rig.rootY = 600
-  return new Behaviour(rig, 600)
+  return new Behaviour(rig)
 }
 
 /** Feed a gesture through the real handler at a given sample rate. */

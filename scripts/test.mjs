@@ -143,6 +143,47 @@ async function main() {
   }
   pass('A2 console clean across all five tiers')
 
+  // ------------------------------------------------------------- wandering
+  {
+    const page = await ctx.newPage()
+    const { errors } = watch(page)
+    await page.goto(`${BASE}/?debug`, { waitUntil: 'domcontentloaded' })
+    await waitReady(page)
+    await page.waitForFunction(() => window.__tamati.greetingActive === false, { timeout: 8000 })
+
+    const start = await page.evaluate(() => window.__tamati.world)
+    // It pauses between walks, so allow a generous window before calling it stuck.
+    let moved = 0
+    let sawWalking = false
+    for (let i = 0; i < 40; i++) {
+      await page.waitForTimeout(250)
+      const s = await page.evaluate(() => ({
+        w: window.__tamati.world,
+        walking: window.__tamati.walking,
+      }))
+      sawWalking ||= s.walking
+      moved = Math.max(moved, Math.hypot(s.w.x - start.x, s.w.y - start.y))
+      if (moved > 0.12 && sawWalking) break
+    }
+    moved > 0.12
+      ? pass('pet wanders the ground plane', `moved ${moved.toFixed(2)} world units`)
+      : fail('pet wanders the ground plane', `only moved ${moved.toFixed(2)}`)
+    sawWalking ? pass('walking state is reported') : fail('walking state is reported')
+
+    const inBounds = await page.evaluate(() => {
+      const w = window.__tamati.world
+      return w.x >= -1 && w.x <= 1 && w.y >= 0 && w.y <= 1
+    })
+    inBounds
+      ? pass('stays on the plane', 'never wanders off the surface')
+      : fail('stays on the plane')
+
+    await page.screenshot({ path: join(SHOTS, 'wandering.png') })
+    await page.close()
+    if (errors.length) fail('A2 console clean while wandering', errors.slice(0, 2).join(' | '))
+    else pass('A2 console clean while wandering')
+  }
+
   // ------------------------------------------------------ grab / drag / shake
   {
     const page = await ctx.newPage()
@@ -207,6 +248,7 @@ async function main() {
           shaking: window.__tamati.shaking,
           face: window.__tamati.face,
           reversals: window.__tamati.shakeFlips,
+          samples: window.__tamati.shakeSampleCount,
           sampleHz: samples / elapsed,
         }
       },
@@ -225,12 +267,15 @@ async function main() {
     const sampleHz = shakeResult.sampleHz
     const RELIABLE_HZ = 32
 
-    shakeResult.reversals > 0
+    // The wiring check must assert only what is true at ANY sampling rate: that pointer
+    // events reached the detector at all. Reversals need enough samples to resolve, so
+    // asserting on them here was the same flakiness in a new hat.
+    shakeResult.samples > 0
       ? pass(
           'shake input path reaches the detector',
-          `${shakeResult.reversals} reversals seen at ${sampleHz.toFixed(0)}Hz`,
+          `${shakeResult.samples} samples in window, ${shakeResult.reversals} reversals at ${sampleHz.toFixed(0)}Hz`,
         )
-      : fail('shake input path reaches the detector', 'no reversals registered at all')
+      : fail('shake input path reaches the detector', 'no pointer samples registered at all')
 
     if (sampleHz < RELIABLE_HZ) {
       results.push({
