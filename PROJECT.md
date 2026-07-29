@@ -4,10 +4,10 @@
 **Stack:** Vite + TypeScript + PixiJS v8, wrapped as a native iOS app via Capacitor.
 Custom verlet rig, no animation authoring tool. Web build stays the dev surface.
 **Repo:** github.com/Netsrakmas/tamati
-**Live:** pending — will be https://netsrakmas.github.io/tamati/ once Pages is enabled
-with Source = GitHub Actions (Settings → Pages). The workflow's `verify` job is green;
-`deploy` 404s until that setting exists.
-**Updated:** 2026-07-28
+**Live:** https://netsrakmas.github.io/tamati/ — confirmed working by the user.
+Kill-gate link is **https://netsrakmas.github.io/tamati/?fastforward=9h** (a cold first
+open gives the deliberately unimpressed `glance` tier, which would test the wrong thing).
+**Updated:** 2026-07-29
 
 ## One-liner
 
@@ -19,17 +19,18 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 - 0 idee — **done** (verdict: build, as a craft project not a business). See IDEE.md
 - 1 plan — **done.** See RESEARCH.md, PROMPT.md. 8 milestones (M8 = widget, added when
   going native unblocked it).
-- 2 build — **M1 built, gate PARTIAL.** 24 unit tests + 17 browser checks green. Two
+- 2 build — **M1 built, gate PARTIAL.** 33 unit tests + 22 browser checks green. Two
   criteria unverifiable in a GPU-less container (raster fps, end-to-end shake gesture) —
   both documented in PROMPT.md M1 rather than waved through. **The human kill-gate — five
   people, three unprompted smiles — has not been run, so M1 stays unticked.** That is the
   milestone's actual purpose; everything else is preamble.
 - 3 art — not started
-- 4 test — **harness built and running in CI.** `scripts/test.mjs`, 18 checks, green on a
-  real runner in 61s. Two criteria remain unjudgeable without a GPU (see M1).
-- 5 ship — **workflow in place, awaiting one manual setting.** Deploying the web build
-  early and out of order on purpose: the M1 kill-gate needs a link people can open on a
-  phone, and that doesn't need the App Store.
+- 4 test — **harness built and running in CI.** `scripts/test.mjs`, 22 checks, green.
+  Two criteria remain unjudgeable without a GPU (see M1).
+- 5 ship — **web build LIVE.** Out of order on purpose: the M1 kill-gate needs a link
+  people can open on a phone, and that doesn't need the App Store. CI now verifies the
+  published page after every deploy (this sandbox's network policy blocks github.io, so
+  the live check runs on the runner).
 
 ## Open questions
 
