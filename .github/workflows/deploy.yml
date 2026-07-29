@@ -1,0 +1,69 @@
+name: Verify and deploy to Pages
+
+on:
+  push:
+    branches: [claude/virtual-pet-app-brainstorm-b11406]
+  workflow_dispatch:
+
+# Least privilege: only what Pages deployment actually needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let a newer push supersede an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npx vite build
+
+      # The harness needs a browser. CHROMIUM_PATH is unset here, so it falls back to
+      # Playwright's own download rather than this repo's container-specific path.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser harness
+        run: node scripts/test.mjs
+
+      # Screenshots are the evidence for the squint test; keep them even on failure.
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: artifacts/
+          if-no-files-found: warn
+
+      - name: Package for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

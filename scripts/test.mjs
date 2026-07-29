@@ -9,7 +9,14 @@
 import { chromium } from 'playwright'
 import { createServer } from 'node:http'
 import { readFile, mkdir, stat } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { join, extname, resolve } from 'node:path'
+
+// This container ships a prebuilt Chromium; CI runners use Playwright's own download.
+// Hardcoding the local path made the harness unrunnable anywhere else.
+const CHROMIUM =
+  process.env.CHROMIUM_PATH ??
+  (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined)
 
 const ROOT = resolve(import.meta.dirname, '..', 'dist')
 const SHOTS = resolve(import.meta.dirname, '..', 'artifacts')
@@ -68,7 +75,7 @@ async function waitReady(page) {
 async function main() {
   await mkdir(SHOTS, { recursive: true })
   const server = await serve()
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+  const browser = await chromium.launch(CHROMIUM ? { executablePath: CHROMIUM } : {})
 
   // iPhone-ish portrait — this is a mobile-first app and desktop numbers would flatter it.
   const ctx = await browser.newContext({
