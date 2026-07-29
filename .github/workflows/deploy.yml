@@ -64,6 +64,38 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # A green deploy only means the artifact was accepted. This loads the actual published
+  # page — the only way to catch a wrong base path, a case-sensitive 404, or a service
+  # worker pinning people to a stale build.
+  verify-live:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      # Pages serves the new build a moment after the deployment reports success.
+      - name: Wait for propagation
+        run: sleep 20
+
+      - name: Verify the live page
+        run: node scripts/verify-live.mjs "${{ needs.deploy.outputs.page_url || 'https://netsrakmas.github.io/tamati/' }}"
+
+      - name: Upload live screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-screenshot
+          path: artifacts/live-mobile.png
+          if-no-files-found: warn
