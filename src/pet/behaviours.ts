@@ -6,6 +6,7 @@ import { Rig } from '../rig/verlet'
 import { blendPose, type PoseName } from '../rig/poses'
 import { IDLE, SHAKE, SQUASH } from '../style/motion'
 import type { GreetingSpec } from './greeting'
+import { nearestMote, popMote, type Mote } from '../world/dust'
 import {
   GREETING_SPOT,
   distance,
@@ -25,7 +26,33 @@ const WANDER = {
   arriveEpsilon: 0.04,
 } as const
 
-export type Face = 'normal' | 'happy' | 'delighted' | 'blink' | 'joy'
+export type Face =
+  | 'normal'
+  | 'happy'
+  | 'delighted'
+  | 'blink'
+  | 'joy'
+  | 'asleep'
+  | 'annoyed'
+  | 'surprised'
+
+/**
+ * Idle nonsense. The single highest smile-per-line item in the project: a creature that
+ * only reacts when prodded has no interior life, one that gets distracted by a speck does.
+ * Weighted so the quiet ones are common and the big gags stay rare enough to still land.
+ */
+export type IdleName = 'lookAround' | 'hiccup' | 'scratch' | 'doze' | 'sneeze' | 'chaseDust'
+
+const IDLE_POOL: Array<{ name: IdleName; weight: number; ms: number }> = [
+  { name: 'lookAround', weight: 30, ms: 1900 },
+  { name: 'hiccup', weight: 20, ms: 900 },
+  { name: 'scratch', weight: 16, ms: 1500 },
+  { name: 'chaseDust', weight: 16, ms: 5200 },
+  { name: 'sneeze', weight: 10, ms: 1400 },
+  { name: 'doze', weight: 8, ms: 4200 },
+]
+
+const IDLE_GAP_MS = [1200, 4200] as const
 
 interface Hop {
   atMs: number
@@ -75,8 +102,64 @@ export class Behaviour {
   private poseTo: PoseName = 'idle'
   private poseT = 1
 
+  /** Current bit of nonsense, if any. */
+  idle: IdleName | null = null
+  private idleT = 0
+  private idleDur = 0
+  private nextIdleAt = 0
+  private idleStep = 0
+  private dustTarget: Mote | null = null
+  private motes: Mote[] = []
+
+  /** Escalating reaction to being poked. See onTap. */
+  private taps: number[] = []
+  private annoyedUntil = 0
+  tapLevel = 0
+
   constructor(private rig: Rig) {
     this.blinkAt = randBetween(IDLE.blinkEveryMs[0], IDLE.blinkEveryMs[1])
+  }
+
+  /** The motes it may notice. Passed in so the behaviour owns no world state. */
+  setMotes(motes: Mote[]): void {
+    this.motes = motes
+  }
+
+  /**
+   * Poking it. Escalates rather than repeating: charming, then over-stimulated, then
+   * done with you. Straight out of the spec's examples — a reaction, never a score.
+   *
+   * 1–2 taps  → pleased little bounce
+   * 3–4 taps  → giggling, wobbling
+   * 5+ taps   → annoyed, flinches back, and walks off in a huff
+   */
+  onTap(nowMs: number): void {
+    if (this.greeting || this.grabbing) return
+    this.taps.push(nowMs)
+    const cutoff = nowMs - 1500
+    while (this.taps.length && this.taps[0] < cutoff) this.taps.shift()
+    this.tapLevel = this.taps.length
+
+    this.cancelIdle(nowMs)
+
+    if (this.tapLevel >= 5) {
+      this.face = 'annoyed'
+      this.setPose('recoil')
+      this.annoyedUntil = nowMs + 1600
+      this.impulse('body', 4)
+      // Storm off somewhere else. Being ignored is funnier than being told off.
+      this.wanderTarget = randomWanderTarget()
+      this.pauseUntil = 0
+    } else if (this.tapLevel >= 3) {
+      this.face = 'delighted'
+      this.setPose('reach')
+      this.impulse('body', 5.5)
+      this.impulse('ant2', 3)
+    } else {
+      this.face = 'happy'
+      this.setPose('lookUp')
+      this.impulse('body', 4)
+    }
   }
 
   /** Carry the pet sideways across the plane while it's held. Depth stays fixed. */
@@ -252,24 +335,29 @@ export class Behaviour {
     } else if (nowMs < this.wantsMoreUntil) {
       this.face = 'happy'
       if (this.poseTo !== 'reach') this.setPose('reach')
-    } else if (!this.grabbing) {
+    } else if (nowMs < this.annoyedUntil) {
+      this.face = 'annoyed'
+    } else if (!this.grabbing && !this.idle) {
       // Put down after a plain drag: settle back to a neutral face. Without this the
       // grab-time 'happy' sticks forever and the pet grins at nothing.
       this.face = 'normal'
       if (this.poseTo !== 'idle') this.setPose('idle')
     }
 
-    // --- pose blending -----------------------------------------------------
+    // --- position on the ground plane --------------------------------------
+    this.updateWorld(dtMs, nowMs)
+
+    // --- idle nonsense (after walking is known) ----------------------------
+    this.updateIdle(dtMs, nowMs)
+
+    // --- pose blending, last so idles get the final say --------------------
     this.poseT = Math.min(1, this.poseT + dtMs / 260)
     this.rig.pose = blendPose(this.poseFrom, this.poseTo, ease(this.poseT), (n) =>
       this.rig.index(n),
     )
 
-    // --- position on the ground plane --------------------------------------
-    this.updateWorld(dtMs, nowMs)
-
     // --- blinking ----------------------------------------------------------
-    if (!this.grabbing && !this.greeting) {
+    if (!this.grabbing && !this.greeting && !this.idle && nowMs >= this.annoyedUntil) {
       if (nowMs > this.blinkAt && nowMs > this.blinkUntil) {
         this.blinkUntil = nowMs + IDLE.blinkDurMs
         this.blinkAt =
@@ -287,6 +375,146 @@ export class Behaviour {
       this.squashT += dtMs
       if (this.squashT > SQUASH.recoverMs) this.squashT = -1
     }
+  }
+
+  private cancelIdle(nowMs: number): void {
+    this.idle = null
+    this.dustTarget = null
+    this.nextIdleAt = nowMs + randBetween(IDLE_GAP_MS[0], IDLE_GAP_MS[1])
+  }
+
+  private pickIdle(): { name: IdleName; ms: number } {
+    const pool = this.motes.length ? IDLE_POOL : IDLE_POOL.filter((i) => i.name !== 'chaseDust')
+    const total = pool.reduce((s, i) => s + i.weight, 0)
+    let r = Math.random() * total
+    for (const i of pool) {
+      r -= i.weight
+      if (r <= 0) return { name: i.name, ms: i.ms }
+    }
+    return { name: pool[0].name, ms: pool[0].ms }
+  }
+
+  /**
+   * The nonsense. Each one is a few lines and a pose — the point is that there are
+   * several of them and you never quite know which you'll get.
+   */
+  private updateIdle(dtMs: number, nowMs: number): void {
+    if (this.greeting || this.grabbing || nowMs < this.annoyedUntil) return
+
+    if (!this.idle) {
+      // Only start something while standing still, and never mid-walk.
+      if (this.walking || nowMs < this.nextIdleAt) return
+      const chosen = this.pickIdle()
+      this.idle = chosen.name
+      this.idleDur = chosen.ms
+      this.idleT = 0
+      this.idleStep = 0
+      if (this.idle === 'chaseDust') {
+        this.dustTarget = nearestMote(this.motes, this.world)
+        if (!this.dustTarget) {
+          this.cancelIdle(nowMs)
+          return
+        }
+        this.setPose('perk')
+      }
+      return
+    }
+
+    this.idleT += dtMs
+    const k = this.idleT / this.idleDur
+
+    switch (this.idle) {
+      case 'lookAround': {
+        // Left, then right, then back to neutral. Cheap, and it reads as curiosity.
+        if (k < 0.35) this.want('lookSide', 'normal')
+        else if (k < 0.7) this.want('lookUp', 'normal')
+        else this.want('idle', 'normal')
+        break
+      }
+      case 'hiccup': {
+        // One sharp involuntary jolt, then a slightly startled beat.
+        if (this.idleStep === 0) {
+          this.idleStep = 1
+          this.impulse('body', 6)
+          this.impulse('ant2', 4)
+          this.face = 'surprised'
+          this.setPose('perk')
+        } else if (k > 0.55) {
+          this.want('idle', 'normal')
+        }
+        break
+      }
+      case 'scratch': {
+        this.want('lookSide', 'normal')
+        // Little repeated nudges on one arm — a scratch without an arm rig.
+        if (this.idleT - this.idleStep > 110) {
+          this.idleStep = this.idleT
+          this.impulse('armR', 2.4)
+        }
+        break
+      }
+      case 'sneeze': {
+        // Wind up, then blow.
+        if (k < 0.55) {
+          this.want('crouch', 'surprised')
+        } else if (this.idleStep === 0) {
+          this.idleStep = 1
+          this.impulse('body', 8)
+          this.impulse('head', 5)
+          this.impulse('ant2', 7)
+          this.want('perk', 'delighted')
+        } else if (k > 0.85) {
+          this.want('idle', 'normal')
+        }
+        break
+      }
+      case 'doze': {
+        // Nods off standing up, then wakes with a start. The best one.
+        if (k < 0.75) {
+          this.want('doze', 'asleep')
+        } else if (this.idleStep === 0) {
+          this.idleStep = 1
+          this.impulse('body', 7)
+          this.impulse('ant2', 6)
+          this.want('perk', 'surprised')
+        }
+        break
+      }
+      case 'chaseDust': {
+        const m = this.dustTarget
+        if (!m || m.life < 1) {
+          this.cancelIdle(nowMs)
+          return
+        }
+        const d = distance(this.world, m.pos)
+        if (d > 0.06) {
+          // Walk to it — reuse the wander mover by borrowing its target.
+          this.wanderTarget = { ...m.pos }
+          this.pauseUntil = 0
+          this.want('perk', 'normal')
+        } else {
+          // Pounce. The mote pops and drifts away, which is the joke: it never wins.
+          this.impulse('body', 9)
+          popMote(m)
+          this.want('perk', 'delighted')
+          this.dustTarget = null
+          this.wanderTarget = null
+          this.pauseUntil = nowMs + 900
+          this.idleT = this.idleDur // end it
+        }
+        break
+      }
+    }
+
+    if (this.idleT >= this.idleDur) {
+      this.want('idle', 'normal')
+      this.cancelIdle(nowMs)
+    }
+  }
+
+  private want(pose: PoseName, face: Face): void {
+    if (this.poseTo !== pose) this.setPose(pose)
+    this.face = face
   }
 
   /**

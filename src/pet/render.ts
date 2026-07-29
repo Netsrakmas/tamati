@@ -70,11 +70,25 @@ export function drawPet(g: Graphics, rig: Rig, face: Face): void {
   const cheekL = at(-(ex + 12), ey + 22)
   const cheekR = at(ex + 12, ey + 22)
 
-  if (face === 'blink') {
+  if (face === 'blink' || face === 'asleep') {
     for (const e of [left, right]) {
       g.moveTo(e.x - EYE.radius, e.y)
         .lineTo(e.x + EYE.radius, e.y)
         .stroke({ width: 4, color: PALETTE.petInk, cap: 'round' })
+    }
+  } else if (face === 'annoyed') {
+    // Half-lidded: a lid drawn across the top of each eye. Reads as "I have had enough
+    // of you" without needing brows.
+    for (const e of [left, right]) {
+      g.circle(e.x, e.y + 3, EYE.radius * 0.82).fill({ color: PALETTE.petInk })
+      g.moveTo(e.x - EYE.radius - 2, e.y - 2)
+        .lineTo(e.x + EYE.radius + 2, e.y - 5)
+        .stroke({ width: 6, color: PALETTE.petBody, cap: 'round' })
+    }
+  } else if (face === 'surprised') {
+    for (const e of [left, right]) {
+      g.circle(e.x, e.y, EYE.radius * 1.22).fill({ color: PALETTE.petInk })
+      g.circle(e.x + 4, e.y - 4, EYE.radius * 0.4).fill({ color: PALETTE.petBelly })
     }
   } else if (face === 'happy' || face === 'delighted' || face === 'joy') {
     // ^ ^ — the arcs are the whole difference between "a shape" and "pleased to see you"
@@ -102,6 +116,18 @@ export function drawPet(g: Graphics, rig: Rig, face: Face): void {
     for (const c of [cheekL, cheekR]) {
       g.ellipse(c.x, c.y, 10, 7).fill({ color: PALETTE.petBlush, alpha: 0.8 })
     }
+  } else if (face === 'asleep') {
+    // A small sleep bubble. The only thing on screen that is allowed to be a cliché.
+    const b = at(30, ey - 6)
+    g.circle(b.x, b.y, 7).fill({ color: PALETTE.petBelly, alpha: 0.8 })
+    g.ellipse(mouth.x, mouth.y + 2, 6, 5).fill({ color: PALETTE.petInk, alpha: 0.75 })
+  } else if (face === 'surprised') {
+    g.ellipse(mouth.x, mouth.y, 9, 11).fill({ color: PALETTE.petInk })
+  } else if (face === 'annoyed') {
+    // A flat line. Doing less is the joke.
+    g.moveTo(mouth.x - 10, mouth.y + 2)
+      .lineTo(mouth.x + 10, mouth.y + 2)
+      .stroke({ width: 4, color: PALETTE.petInk, cap: 'round' })
   } else {
     g.moveTo(mouth.x - 8, mouth.y)
       .quadraticCurveTo(mouth.x, mouth.y + 7, mouth.x + 8, mouth.y)

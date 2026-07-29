@@ -4,7 +4,15 @@
 import type { PoseTarget } from './verlet'
 import { BABY } from './skeleton'
 
-export type PoseName = 'idle' | 'lookUp' | 'reach' | 'crouch'
+export type PoseName =
+  | 'idle'
+  | 'lookUp'
+  | 'reach'
+  | 'crouch'
+  | 'doze'
+  | 'lookSide'
+  | 'perk'
+  | 'recoil'
 
 /** Offsets are from the rig root. Derived from the skeleton's rest layout. */
 function base(): Record<string, { ox: number; oy: number }> {
@@ -37,6 +45,46 @@ const POSES: Record<PoseName, Record<string, { ox: number; oy: number }>> = {
     p.armR = { ox: 54, oy: -40 }
     p.ant1 = { ox: 0, oy: -182 }
     p.ant2 = { ox: 0, oy: -214 }
+    return p
+  })(),
+  /** Nodding off where it stands. The antenna droops — that's the whole gag. */
+  doze: (() => {
+    const p = base()
+    p.body = { ox: 0, oy: -40 }
+    p.head = { ox: 6, oy: -132 }
+    p.ant1 = { ox: 26, oy: -178 }
+    p.ant2 = { ox: 54, oy: -190 }
+    p.armL = { ox: -46, oy: -44 }
+    p.armR = { ox: 46, oy: -44 }
+    return p
+  })(),
+  /** Looking off to one side, mildly interested in something you can't see. */
+  lookSide: (() => {
+    const p = base()
+    p.head = { ox: 22, oy: -146 }
+    p.ant1 = { ox: 34, oy: -200 }
+    p.ant2 = { ox: 52, oy: -226 }
+    return p
+  })(),
+  /** Ears up. Something moved. */
+  perk: (() => {
+    const p = base()
+    p.head = { ox: 0, oy: -154 }
+    p.ant1 = { ox: -2, oy: -214 }
+    p.ant2 = { ox: -4, oy: -254 }
+    p.armL = { ox: -54, oy: -66 }
+    p.armR = { ox: 54, oy: -66 }
+    return p
+  })(),
+  /** Flinch backwards — used when it's had enough of being poked. */
+  recoil: (() => {
+    const p = base()
+    p.body = { ox: 0, oy: -48 }
+    p.head = { ox: -10, oy: -150 }
+    p.armL = { ox: -62, oy: -74 }
+    p.armR = { ox: 62, oy: -74 }
+    p.ant1 = { ox: -18, oy: -206 }
+    p.ant2 = { ox: -38, oy: -232 }
     return p
   })(),
 }

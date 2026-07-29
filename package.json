@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "verify": "vite build && node scripts/test.mjs"
+    "verify": "vite build && node scripts/test.mjs",
+    "capture:idles": "vite build && node scripts/capture-idles.mjs"
   },
   "repository": {
     "type": "git",

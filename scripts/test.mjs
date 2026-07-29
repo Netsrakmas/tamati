@@ -152,10 +152,11 @@ async function main() {
     await page.waitForFunction(() => window.__tamati.greetingActive === false, { timeout: 8000 })
 
     const start = await page.evaluate(() => window.__tamati.world)
-    // It pauses between walks, so allow a generous window before calling it stuck.
+    // It pauses between walks AND now stops to do idle nonsense, so the window has to be
+    // generous or this fails on a pet that is simply having a scratch. 20s, exits early.
     let moved = 0
     let sawWalking = false
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 80; i++) {
       await page.waitForTimeout(250)
       const s = await page.evaluate(() => ({
         w: window.__tamati.world,

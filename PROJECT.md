@@ -19,7 +19,9 @@ an idiot into a dry old friend. Thirty seconds a day. Then it's over, on purpose
 - 0 idee — **done** (verdict: build, as a craft project not a business). See IDEE.md
 - 1 plan — **done.** See RESEARCH.md, PROMPT.md. 8 milestones (M8 = widget, added when
   going native unblocked it).
-- 2 build — **M1 built, gate PARTIAL.** 33 unit tests + 22 browser checks green. Two
+- 2 build — **M1 built + charm pass, gate PARTIAL.** 47 unit tests + 22 browser checks
+  green. Charm pass added the idle-nonsense pool, tap escalation and dust motes — the
+  spec's "reaction density is the product" line, acted on. Two
   criteria unverifiable in a GPU-less container (raster fps, end-to-end shake gesture) —
   both documented in PROMPT.md M1 rather than waved through. **The human kill-gate — five
   people, three unprompted smiles — has not been run, so M1 stays unticked.** That is the

@@ -9,6 +9,7 @@ import { drawPet } from './pet/render'
 import { greetingFor } from './pet/greeting'
 import { drawGround, drawShadow, roomColours, timeOfDay } from './room/scene'
 import { makeGround, worldToScreen, type Ground } from './world/ground'
+import { drawMotes, makeMotes, updateMotes } from './world/dust'
 import { load, save, type Save } from './persist/store'
 import { absenceOverrideMs } from './time/clock'
 import { setUpBedtimeNotification } from './notify/capacitor'
@@ -34,8 +35,9 @@ async function boot(): Promise<void> {
   app.stage.addChild(world)
 
   const groundG = new Graphics()
+  const dustG = new Graphics()
   const shadowG = new Graphics()
-  world.addChild(groundG, shadowG)
+  world.addChild(groundG, dustG, shadowG)
 
   const petBox = new Container()
   const petG = new Graphics()
@@ -63,6 +65,8 @@ async function boot(): Promise<void> {
 
   layout()
   const behaviour = new Behaviour(rig)
+  const motes = makeMotes()
+  behaviour.setMotes(motes)
 
   // Seed the rig at its rest pose on the ground, so the first frame isn't a creature
   // falling from orbit.
@@ -124,11 +128,16 @@ async function boot(): Promise<void> {
     rig.grabbed = best
     rig.grabX = local.x
     rig.grabY = local.y
+    pointerDownAt = performance.now()
+    pointerMoved = 0
+    downX = e.global.x
+    downY = e.global.y
     behaviour.onGrabStart()
   })
 
   app.stage.on('pointermove', (e) => {
     if (rig.grabbed < 0) return
+    pointerMoved = Math.max(pointerMoved, Math.hypot(e.global.x - downX, e.global.y - downY))
     const local = toRigSpace(e.global.x, e.global.y)
     rig.grabX = local.x
     rig.grabY = local.y
@@ -138,10 +147,19 @@ async function boot(): Promise<void> {
     behaviour.onGrabMove(e.global.x, performance.now())
   })
 
+  let pointerDownAt = 0
+  let pointerMoved = 0
+  let downX = 0
+  let downY = 0
+
   const release = (): void => {
     if (rig.grabbed < 0) return
     rig.grabbed = -1
-    behaviour.onGrabEnd(performance.now())
+    const t = performance.now()
+    behaviour.onGrabEnd(t)
+    // A short press that never really moved is a poke, not a drag. Distinguishing them
+    // here means one gesture can be both without the two fighting each other.
+    if (t - pointerDownAt < 350 && pointerMoved < 14) behaviour.onTap(t)
   }
   app.stage.on('pointerup', release)
   app.stage.on('pointerupoutside', release)
@@ -193,6 +211,15 @@ async function boot(): Promise<void> {
     get lift() {
       return liftPx
     },
+    get idle() {
+      return behaviour.idle
+    },
+    get tapLevel() {
+      return behaviour.tapLevel
+    },
+    get motes() {
+      return motes.map((m) => ({ x: m.pos.x, y: m.pos.y, life: m.life }))
+    },
     cpuMs: 0,
   }
 
@@ -227,6 +254,8 @@ async function boot(): Promise<void> {
     for (const q of rig.points) lowest = Math.max(lowest, q.y + q.radius)
     liftPx = Math.max(0, rig.floorY - lowest)
 
+    updateMotes(motes, dt)
+    drawMotes(dustG, ground, motes)
     drawShadow(shadowG, ground, behaviour.world, liftPx * p.scale)
 
     const sq = behaviour.squashScale()
@@ -253,7 +282,8 @@ async function boot(): Promise<void> {
       dbg.text =
         `${fpsAvg.toFixed(0)} fps · ${spec.tier} · visits ${state.visits}\n` +
         `world ${behaviour.world.x.toFixed(2)},${behaviour.world.y.toFixed(2)} ` +
-        `${behaviour.walking ? 'walking' : 'still'} lift ${liftPx.toFixed(0)}`
+        `${behaviour.walking ? 'walking' : 'still'} lift ${liftPx.toFixed(0)}\n` +
+        `idle ${behaviour.idle ?? '-'} face ${behaviour.face} taps ${behaviour.tapLevel}`
     }
   })
 
