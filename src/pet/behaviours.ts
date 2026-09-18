@@ -6,6 +6,7 @@ import { Rig } from '../rig/verlet'
 import { blendPose, type PoseName } from '../rig/poses'
 import { IDLE, SHAKE, SQUASH } from '../style/motion'
 import type { GreetingSpec } from './greeting'
+import type { CareAction } from './care'
 import { nearestMote, popMote, type Mote } from '../world/dust'
 import {
   GREETING_SPOT,
@@ -60,6 +61,39 @@ interface Hop {
 }
 
 export class Behaviour {
+  sleeping = false
+  reducedMotion = false
+  careAction: CareAction | null = null
+  careElapsed = 0
+  private careHop = 0
+
+  rest(value: boolean): void {
+    this.sleeping = value
+    this.greeting = null
+    this.careAction = null
+    this.walking = false
+    this.grabbing = false
+    this.rig.grabbed = -1
+    this.rig.poseStrength = 1
+    this.shakePx = 0
+    this.shaking = false
+    this.wanderTarget = null
+    this.cancelIdle(performance.now())
+    this.setPose(value ? 'doze' : 'idle')
+    this.face = value ? 'asleep' : 'normal'
+  }
+
+  startCare(action: CareAction): void {
+    this.rest(false)
+    this.careAction = action
+    this.careElapsed = 0
+    this.careHop = 0
+  }
+
+  finishCare(): void {
+    this.careAction = null
+    this.setPose('idle')
+  }
   private t = 0
   private greeting: GreetingSpec | null = null
   private hops: Hop[] = []
@@ -134,7 +168,7 @@ export class Behaviour {
    * 5+ taps   → annoyed, flinches back, and walks off in a huff
    */
   onTap(nowMs: number): void {
-    if (this.greeting || this.grabbing) return
+    if (this.greeting || this.grabbing || this.sleeping || this.careAction) return
     this.taps.push(nowMs)
     const cutoff = nowMs - 1500
     while (this.taps.length && this.taps[0] < cutoff) this.taps.shift()
@@ -298,6 +332,25 @@ export class Behaviour {
 
   update(dtMs: number, nowMs: number): void {
     this.t += dtMs
+
+    if (this.sleeping || this.careAction) {
+      this.walking = false
+      this.shakePx = 0
+      this.careElapsed += dtMs
+      const action = this.careAction
+      this.want(this.sleeping ? 'doze' : action === 'snack' ? 'crouch' : 'reach', this.sleeping ? 'asleep' : action === 'snack' ? 'happy' : 'delighted')
+      if (action === 'play') {
+        this.world.x = Math.sin(this.careElapsed / 650) * .17
+        this.facing = Math.cos(this.careElapsed / 650) > 0 ? 1 : -1
+      }
+      if (action && this.careElapsed - this.careHop > (action === 'play' ? 500 : 850)) {
+        this.careHop = this.careElapsed
+        this.impulse('body', action === 'play' ? 5 : 2)
+      }
+      this.poseT = Math.min(1, this.poseT + dtMs / 400)
+      this.rig.pose = blendPose(this.poseFrom, this.poseTo, ease(this.poseT), n => this.rig.index(n))
+      return
+    }
 
     // --- greeting playback -------------------------------------------------
     if (this.greeting) {
@@ -569,6 +622,7 @@ export class Behaviour {
 
   /** Visual scale multiplier. Baby deliberately breaks "feel it, don't see it". */
   squashScale(): { x: number; y: number } {
+    if (this.reducedMotion) return { x: 1, y: 1 }
     if (this.squashT < 0) return { x: 1, y: 1 }
     const k = this.squashT / SQUASH.recoverMs
     const s = SQUASH.baby
@@ -581,11 +635,12 @@ export class Behaviour {
   }
 
   breathe(nowMs: number): number {
-    if (this.grabbing) return 1
+    if (this.grabbing || this.reducedMotion) return 1
     return 1 + Math.sin((nowMs / 1000) * IDLE.breathHz * Math.PI * 2) * IDLE.breathAmp
   }
 
   private impulse(name: string, power: number): void {
+    if (this.reducedMotion) return
     const p = this.rig.point(name)
     p.py += power
   }

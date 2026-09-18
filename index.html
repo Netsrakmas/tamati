@@ -4,46 +4,25 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#f5ebda" />
+    <meta name="theme-color" content="#172a47" />
+    <meta
+      name="description"
+      content="A little friend. A quiet moment. Meet Tamati, a playful pocket companion with nothing to keep up with."
+    />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <title>Tamati</title>
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-        background: #f5ebda;
-        overscroll-behavior: none;
-        touch-action: none;
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
-      #app {
-        position: fixed;
-        inset: 0;
-      }
-      canvas {
-        display: block;
-      }
-    </style>
+    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <title>Tamati — a little everyday company</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="shell"></div>
+    <noscript
+      >Tamati needs JavaScript to bring your little friend to life.</noscript
+    >
     <script type="module" src="/src/main.ts"></script>
-    <script>
-      // A6: fully offline after first load. Install polish and push land in M6.
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(() => {})
-        })
-      }
-    </script>
   </body>
 </html>

@@ -1,67 +1,72 @@
-// The world: a receding ground plane with a background above the horizon, lit by the
-// real time of day. Room dressing proper lands in M2 — this is the surface the pet
-// wanders on, nothing more.
-
-import { Graphics } from 'pixi.js'
-import { PALETTE } from '../style/palette'
-import type { Ground, WorldPos } from '../world/ground'
-import { depthScale, worldToScreen } from '../world/ground'
-
-export type TimeOfDay = 'day' | 'dusk' | 'night'
-
+import { Assets, Container, Graphics, Sprite, Texture } from "pixi.js";
+import type { Ground, WorldPos } from "../world/ground";
+import { worldToScreen } from "../world/ground";
+import wideURL from "../assets/room-wide.png";
+import tallURL from "../assets/room-tall.png";
+import wideNightURL from "../assets/room-wide-night.png";
+import tallNightURL from "../assets/room-tall-night.png";
+export type TimeOfDay = "day" | "dusk" | "night";
 export function timeOfDay(date: Date): TimeOfDay {
-  const h = date.getHours()
-  if (h >= 21 || h < 7) return 'night'
-  if (h >= 17) return 'dusk'
-  return 'day'
+  const h = date.getHours();
+  return h >= 21 || h < 7 ? "night" : h >= 17 ? "dusk" : "day";
 }
-
-export function roomColours(tod: TimeOfDay): { sky: number; ground: number } {
-  switch (tod) {
-    case 'night':
-      return { sky: PALETTE.roomNight, ground: PALETTE.floorNight }
-    case 'dusk':
-      return { sky: PALETTE.roomDusk, ground: PALETTE.floorDay }
-    default:
-      return { sky: PALETTE.roomDay, ground: PALETTE.floorDay }
+export function roomColours(tod: TimeOfDay) {
+  return {
+    sky: tod === "night" ? 0x1a3056 : 0x365e97,
+    ground: tod === "night" ? 0x2c4169 : 0x708bad,
+  };
+}
+export class PixelRoom extends Container {
+  private background = new Sprite();
+  private sunset = new Graphics();
+  private constructor(private textures: Texture[]) {
+    super();
+    for (const texture of textures) texture.source.scaleMode = "nearest";
+    this.addChild(this.background, this.sunset);
+  }
+  static async load() {
+    return new PixelRoom(
+      await Promise.all(
+        [wideURL, tallURL, wideNightURL, tallNightURL].map((url) =>
+          Assets.load<Texture>(url),
+        ),
+      ),
+    );
+  }
+  layout(g: Ground, tod: TimeOfDay) {
+    const wide = g.screenW / g.screenH >= 1.05;
+    const texture = this.textures[(tod === "night" ? 2 : 0) + (wide ? 0 : 1)];
+    this.background.texture = texture;
+    // The two authored compositions keep furniture readable without stretching it.
+    const scale = Math.max(
+      g.screenW / texture.width,
+      g.screenH / texture.height,
+    );
+    this.background.scale.set(scale);
+    this.background.position.set(
+      (g.screenW - texture.width * scale) / 2,
+      (g.screenH - texture.height * scale) / 2,
+    );
+    this.sunset.clear();
+    if (tod === "dusk")
+      this.sunset
+        .rect(0, 0, g.screenW, g.screenH)
+        .fill({ color: 0xe89468, alpha: 0.17 });
   }
 }
-
-export function drawGround(g: Graphics, ground: Ground, tod: TimeOfDay): void {
-  const { sky, ground: floor } = roomColours(tod)
-  const { screenW: w, screenH: h, horizonY } = ground
-
+export function drawShadow(
+  g: Graphics,
+  ground: Ground,
+  at: WorldPos,
+  lift: number,
+): void {
+  const p = worldToScreen(ground, at),
+    shrink = Math.max(0.45, 1 - Math.max(0, lift) / 220);
   g.clear()
-  g.rect(0, 0, w, horizonY).fill({ color: sky })
-  g.rect(0, horizonY, w, h - horizonY).fill({ color: floor })
-
-  // A soft band at the horizon so the two planes meet rather than butt together.
-  g.rect(0, horizonY, w, 6).fill({ color: PALETTE.uiMuted, alpha: 0.18 })
-
-  // Faint depth bands. Spaced by the same foreshortening as the pet, so walking
-  // "into" the screen reads as depth rather than as sliding upward.
-  for (let i = 1; i <= 5; i++) {
-    const y = i / 6
-    const py = horizonY + y * (h - horizonY)
-    g.rect(0, py, w, 1).fill({ color: PALETTE.uiMuted, alpha: 0.07 })
-  }
-}
-
-/**
- * Contact shadow. It is the only thing that says whether the pet is standing on the
- * ground or in the air — without it a hop just looks like the pet growing.
- *
- * @param lift height above the surface in px (0 = touching)
- */
-export function drawShadow(g: Graphics, ground: Ground, at: WorldPos, lift: number): void {
-  const p = worldToScreen(ground, at)
-  const s = depthScale(at.y)
-  const h = Math.max(0, lift)
-  // Higher up → smaller and fainter, which reads as further from the surface.
-  const shrink = Math.max(0.45, 1 - h / 220)
-  g.clear()
-  g.ellipse(p.x, p.y, 46 * s * shrink, 14 * s * shrink).fill({
-    color: PALETTE.petInk,
-    alpha: 0.22 * shrink,
-  })
+    .ellipse(p.x, p.y + 2, 68 * p.scale * shrink, 13 * p.scale * shrink)
+    .fill({ color: 0x17294a, alpha: 0.22 * shrink });
+  g.ellipse(p.x, p.y, 38 * p.scale * shrink, 6 * p.scale * shrink).fill({
+    color: 0x152441,
+    alpha: 0.2 * shrink,
+  });
 }
