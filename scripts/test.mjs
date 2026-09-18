@@ -242,6 +242,56 @@ async function main() {
     await slow.close();
   }
 
+  // Pickup regression: capture the actual artwork while held from several points.
+  // The geometry unit tests cover all rotations; these images let us inspect skin,
+  // face and limb attachment through the real pointer / simulation / render path.
+  {
+    const page = await ctx.newPage();
+    const { errors } = watch(page);
+    await page.goto(BASE, { waitUntil: "domcontentloaded" });
+    await waitReady(page);
+    await page.evaluate(() => document.fonts.ready);
+    const pixelType = await page.evaluate(() => {
+      const family = (selector) =>
+        getComputedStyle(document.querySelector(selector)).fontFamily;
+      return (
+        document.fonts.check('16px "Pixelify Sans"') &&
+        [
+          ".pet-name",
+          ".status",
+          "#settings-title",
+          "#name-input",
+          ".primary",
+        ].every((selector) => family(selector).includes("Pixelify Sans"))
+      );
+    });
+    pixelType
+      ? pass("pixel font loaded across names, messages and settings")
+      : fail("pixel font loaded across names, messages and settings");
+    await page.waitForFunction(() => !window.__tamati.greetingActive);
+    let heldAll = true;
+    for (const name of ["body", "legL", "head"]) {
+      const point = await page.evaluate(
+        (name) => window.__tamati.rig.find((p) => p.name === name),
+        name,
+      );
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.down();
+      await page.mouse.move(195, 170, { steps: 12 });
+      await page.waitForTimeout(650);
+      heldAll &&= await page.evaluate(
+        () => window.__tamati.grabbing && window.__tamati.lift > 40,
+      );
+      await page.screenshot({ path: join(SHOTS, `pickup-${name}.png`) });
+      await page.mouse.up();
+      await page.waitForTimeout(1500);
+    }
+    heldAll && !errors.length
+      ? pass("body, foot and head pickups lift and release cleanly")
+      : fail("body, foot and head pickups", errors.join(" | "));
+    await page.close();
+  }
+
   // ------------------------------------------------------------- wandering
   {
     const page = await ctx.newPage();

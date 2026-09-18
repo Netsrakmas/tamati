@@ -8,6 +8,7 @@ import {
 } from "pixi.js";
 import type { Rig } from "../rig/verlet";
 import type { Face } from "./behaviours";
+import { petFrame, writeBodyVertices } from "./skin";
 import bodyURL from "../assets/pet-body.png";
 import armURL from "../assets/pet-arm.png";
 import footURL from "../assets/pet-foot.png";
@@ -76,56 +77,58 @@ export class PixelPet extends Container {
       body = point("body"),
       a1 = point("ant1"),
       a2 = point("ant2");
-    const tilt = Math.atan2(head.x - body.x, -(head.y - body.y));
+    const frame = petFrame(head, body);
     const buffer = this.body.geometry.getAttribute("aPosition").buffer;
-    for (let row = 0; row < 5; row++) {
-      const t = row / 4;
-      // Face stays attached to the head; the broad lower body follows the heavier body mass.
-      const k = Math.min(1, Math.max(0, (t - 0.22) / 0.55));
-      const x = head.x + (body.x - head.x) * k;
-      const y = (head.y - 57) * (1 - t) + (body.y + 40) * t;
-      const width = 170;
-      buffer.data[row * 4] = x - width / 2;
-      buffer.data[row * 4 + 1] = y;
-      buffer.data[row * 4 + 2] = x + width / 2;
-      buffer.data[row * 4 + 3] = y;
-    }
+    writeBodyVertices(buffer.data, frame);
     buffer.update();
     for (const [sprite, name, sign] of [
       [this.armL, "armL", -1],
       [this.armR, "armR", 1],
     ] as const) {
       const hand = point(name);
-      const sx = body.x + sign * 56,
-        sy = head.y * 0.35 + body.y * 0.65;
-      const hx = hand.x + sign * 26,
-        hy = hand.y - 2;
-      sprite.position.set(sx, sy);
+      const shoulder = frame.at(sign * 56, frame.length * 0.65);
+      const end = frame.offset(hand, sign * 26, -2);
+      sprite.position.set(shoulder.x, shoulder.y);
       sprite.width = 31;
-      sprite.height = Math.max(40, Math.hypot(hx - sx, hy - sy) + 20);
-      sprite.rotation = Math.atan2(-(hx - sx), hy - sy);
+      sprite.height = Math.max(
+        40,
+        Math.hypot(end.x - shoulder.x, end.y - shoulder.y) + 20,
+      );
+      sprite.rotation = Math.atan2(-(end.x - shoulder.x), end.y - shoulder.y);
     }
-    for (const [sprite, name] of [
-      [this.footL, "legL"],
-      [this.footR, "legR"],
+    for (const [sprite, name, sign] of [
+      [this.footL, "legL", -1],
+      [this.footR, "legR", 1],
     ] as const) {
-      const p = point(name);
-      sprite.position.set(p.x * 1.15, p.y + 9);
+      const p = frame.offset(point(name), sign * 4.5, 9);
+      sprite.position.set(p.x, p.y);
+      sprite.rotation = frame.rotation;
     }
-    const tipX = a2.x + 13,
-      tipY = a2.y + 6;
+    const tip = frame.offset(a2, 13, 6);
+    const base = frame.at(0, -50);
+    const bend = frame.offset(a1, -8, -21);
+    const highlightBase = frame.at(-2, -51);
+    const highlightBend = frame.offset(a1, -10, -22);
+    const highlightTip = frame.offset(tip, -2, -2);
     this.stalk.clear();
     this.stalk
-      .moveTo(head.x, head.y - 50)
-      .quadraticCurveTo(a1.x - 8, a1.y - 21, tipX, tipY)
+      .moveTo(base.x, base.y)
+      .quadraticCurveTo(bend.x, bend.y, tip.x, tip.y)
       .stroke({ color: 0xb65524, width: 13, cap: "round" });
     this.stalk
-      .moveTo(head.x - 2, head.y - 51)
-      .quadraticCurveTo(a1.x - 10, a1.y - 22, tipX - 2, tipY - 2)
+      .moveTo(highlightBase.x, highlightBase.y)
+      .quadraticCurveTo(
+        highlightBend.x,
+        highlightBend.y,
+        highlightTip.x,
+        highlightTip.y,
+      )
       .stroke({ color: 0xff9e3e, width: 8, cap: "round" });
-    this.tip.position.set(tipX, tipY);
-    this.expression.position.set(head.x, head.y + 9);
-    this.expression.rotation = tilt * 0.65;
+    this.tip.position.set(tip.x, tip.y);
+    this.tip.rotation = frame.rotation;
+    const facePosition = frame.at(0, 9);
+    this.expression.position.set(facePosition.x, facePosition.y);
+    this.expression.rotation = frame.rotation;
     drawFace(this.expression, face);
   }
 }

@@ -271,7 +271,11 @@ async function boot(): Promise<void> {
   if (new URLSearchParams(location.search).has("debug")) {
     dbg = new Text({
       text: "",
-      style: { fill: PALETTE.uiText, fontSize: 11, fontFamily: "monospace" },
+      style: {
+        fill: PALETTE.uiText,
+        fontSize: 16,
+        fontFamily: "Pixelify Sans",
+      },
     });
     dbg.position.set(10, 40);
     world.addChild(dbg);
